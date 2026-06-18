@@ -1800,10 +1800,12 @@ function SelectionBar({ selectedCount, allSelected, onSelectAll, onDeselectAll, 
 /* ─── Main page ─────────────────────────────────────────────── */
 export default function TransactionView() {
   const { businessId, bookId } = useParams();
-  const { cashbooks, teamMembers } = useApp();
+  const { cashbooks, teamMembers, currentBusiness, user } = useApp();
   const navigate = useNavigate();
+  const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const book = cashbooks.find((b) => b.id === bookId);
 
+  const [myBookRole, setMyBookRole] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [showEntry, setShowEntry] = useState(false);
   const [entryType, setEntryType] = useState('IN');
@@ -1827,6 +1829,11 @@ export default function TransactionView() {
 
   const searchRef = useRef(null);
 
+  // Book-level permissions derived from my_role returned by the transactions API
+  const canWrite         = !myBookRole || ['Primary Admin', 'Data Operator', 'Book Admin'].includes(myBookRole);
+  const canEditDelete    = !myBookRole || ['Primary Admin', 'Book Admin'].includes(myBookRole);
+  const canManageMembers = !myBookRole || isPrimaryAdmin || myBookRole === 'Book Admin';
+
   /* Load transactions + parties from API */
   useEffect(() => {
     if (!bookId || !businessId) return;
@@ -1841,6 +1848,7 @@ export default function TransactionView() {
           amount: parseFloat(t.amount),
           type: t.type,
         })));
+        setMyBookRole(txnData.my_role || 'Primary Admin');
         setBookParties(partyData.parties);
       })
       .catch((err) => console.error('[TransactionView] load failed:', err.message))
@@ -1984,25 +1992,29 @@ export default function TransactionView() {
           >
             <Settings size={15} />
           </button>
-          <button
-            title="Team"
-            style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}
-            onClick={() => navigate(`/businesses/${businessId}/team`)}
-          >
-            <Users size={15} />
-          </button>
+          {canManageMembers && (
+            <button
+              title="Book Members"
+              style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--blue)' }}
+              onClick={() => navigate(`/businesses/${businessId}/cashbooks/${bookId}/settings`)}
+            >
+              <Users size={15} />
+            </button>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 12px', borderRadius: 6,
-            border: '1px solid var(--gray-200)', background: 'var(--white)',
-            fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--gray-700)',
-          }}>
-            <FileText size={13} />
-            Add Bulk Entries
-          </button>
+          {canWrite && (
+            <button style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px', borderRadius: 6,
+              border: '1px solid var(--gray-200)', background: 'var(--white)',
+              fontSize: 13, fontWeight: 500, cursor: 'pointer', color: 'var(--gray-700)',
+            }}>
+              <FileText size={13} />
+              Add Bulk Entries
+            </button>
+          )}
           <button style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '7px 12px', borderRadius: 6,
@@ -2062,28 +2074,32 @@ export default function TransactionView() {
             <kbd style={{ padding: '1px 5px', background: 'var(--gray-100)', borderRadius: 3, fontSize: 11, border: '1px solid var(--gray-200)', color: 'var(--gray-500)' }}>/</kbd>
           )}
         </div>
-        <button
-          onClick={() => { setEntryType('IN'); setShowEntry(true); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 16px', borderRadius: 6,
-            border: 'none', background: '#16A34A',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'white', whiteSpace: 'nowrap',
-          }}
-        >
-          <Plus size={14} /> Cash In
-        </button>
-        <button
-          onClick={() => { setEntryType('OUT'); setShowEntry(true); }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 16px', borderRadius: 6,
-            border: 'none', background: '#DC2626',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'white', whiteSpace: 'nowrap',
-          }}
-        >
-          <Plus size={14} /> Cash Out
-        </button>
+        {canWrite && (
+          <>
+            <button
+              onClick={() => { setEntryType('IN'); setShowEntry(true); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 16px', borderRadius: 6,
+                border: 'none', background: '#16A34A',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'white', whiteSpace: 'nowrap',
+              }}
+            >
+              <Plus size={14} /> Cash In
+            </button>
+            <button
+              onClick={() => { setEntryType('OUT'); setShowEntry(true); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 16px', borderRadius: 6,
+                border: 'none', background: '#DC2626',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'white', whiteSpace: 'nowrap',
+              }}
+            >
+              <Plus size={14} /> Cash Out
+            </button>
+          </>
+        )}
       </div>
 
       {/* ── Balance strip ── */}
@@ -2173,13 +2189,15 @@ export default function TransactionView() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)' }}>
-                  <th style={{ padding: '9px 12px', width: 36, textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      style={{ accentColor: 'var(--blue)', cursor: 'pointer' }}
-                      onChange={(e) => setSelectedRows(e.target.checked ? new Set(filtered.map((t) => t.id)) : new Set())}
-                    />
-                  </th>
+                  {canEditDelete && (
+                    <th style={{ padding: '9px 12px', width: 36, textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        style={{ accentColor: 'var(--blue)', cursor: 'pointer' }}
+                        onChange={(e) => setSelectedRows(e.target.checked ? new Set(filtered.map((t) => t.id)) : new Set())}
+                      />
+                    </th>
+                  )}
                   {[
                     { label: 'Date & Time', align: 'left' },
                     { label: 'Details', align: 'left' },
@@ -2212,19 +2230,21 @@ export default function TransactionView() {
                         onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; setHoveredRowId(null); }}
                         style={{ borderBottom: '1px solid var(--gray-100)', cursor: 'pointer', background: isSelected ? '#EFF6FF' : 'transparent' }}
                       >
-                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            style={{ accentColor: 'var(--blue)', cursor: 'pointer' }}
-                            onChange={(e) => {
-                              const next = new Set(selectedRows);
-                              e.target.checked ? next.add(t.id) : next.delete(t.id);
-                              setSelectedRows(next);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </td>
+                        {canEditDelete && (
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              style={{ accentColor: 'var(--blue)', cursor: 'pointer' }}
+                              onChange={(e) => {
+                                const next = new Set(selectedRows);
+                                e.target.checked ? next.add(t.id) : next.delete(t.id);
+                                setSelectedRows(next);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                        )}
                         <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--gray-700)' }}>{dateLabel}</div>
                           <div style={{ fontSize: 11, color: 'var(--gray-400)', marginTop: 1 }}>{time}</div>
@@ -2241,6 +2261,11 @@ export default function TransactionView() {
                           ) : !t.party ? (
                             <span style={{ fontSize: 13, color: 'var(--gray-300)' }}>—</span>
                           ) : null}
+                          {t.created_by && (
+                            <div style={{ fontSize: 11, color: 'var(--gray-400)', marginTop: 2 }}>
+                              by {t.created_by === user?.id ? 'You' : (t.created_by_name || 'Unknown')}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
                           {t.category || <span style={{ color: 'var(--gray-300)' }}>—</span>}
@@ -2269,7 +2294,7 @@ export default function TransactionView() {
                           </span>
                         </td>
                         <td style={{ padding: '10px 8px', textAlign: 'right', whiteSpace: 'nowrap', width: 72 }}>
-                          {hoveredRowId === t.id && (
+                          {canEditDelete && hoveredRowId === t.id && (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setEditTarget(t); }}

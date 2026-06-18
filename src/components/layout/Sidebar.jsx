@@ -114,19 +114,23 @@ export default function Sidebar() {
   return (
     <nav style={styles.sidebar}>
       <div style={styles.scroll}>
-        {/* CashBook UPI */}
-        <SectionHeader
-          label="CashBook UPI"
-          collapsed={collapsed.upi}
-          onToggle={() => toggle('upi')}
-        />
-        {!collapsed.upi && (
-          <NavItem
-            icon={LayoutDashboard}
-            label="Dashboard"
-            active={is('/payments')}
-            onClick={() => go(`/businesses/${bid}/payments/dashboard`)}
-          />
+        {/* CashBook UPI — Primary Admin only */}
+        {isPrimaryAdmin && (
+          <>
+            <SectionHeader
+              label="CashBook UPI"
+              collapsed={collapsed.upi}
+              onToggle={() => toggle('upi')}
+            />
+            {!collapsed.upi && (
+              <NavItem
+                icon={LayoutDashboard}
+                label="Dashboard"
+                active={is('/payments')}
+                onClick={() => go(`/businesses/${bid}/payments/dashboard`)}
+              />
+            )}
+          </>
         )}
 
         {/* Book Keeping */}

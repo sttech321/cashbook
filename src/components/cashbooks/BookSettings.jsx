@@ -7,6 +7,22 @@ import {
 import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
 
+/* ─── Avatar color ──────────────────────────────────────────── */
+const AVATAR_COLORS = [
+  { bg: '#0891B2', color: '#fff' }, // cyan
+  { bg: '#7C3AED', color: '#fff' }, // violet
+  { bg: '#DB2777', color: '#fff' }, // pink
+  { bg: '#059669', color: '#fff' }, // emerald  ← S, C, K
+  { bg: '#2563EB', color: '#fff' }, // blue
+  { bg: '#D97706', color: '#fff' }, // amber
+  { bg: '#9333EA', color: '#fff' }, // purple
+  { bg: '#DC2626', color: '#fff' }, // red       ← G, O, W
+];
+function avatarColor(name) {
+  const idx = (name || 'U').toUpperCase().charCodeAt(0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
+}
+
 /* ─── Role definitions ──────────────────────────────────────── */
 const ROLE_DATA = {
   'Data Operator': {
@@ -242,6 +258,31 @@ function RemoveMemberModal({ member, bookName, onConfirm, onClose }) {
   );
 }
 
+/* ─── Toast notification ────────────────────────────────────── */
+function Toast({ message, onHide }) {
+  useEffect(() => {
+    const t = setTimeout(onHide, 3500);
+    return () => clearTimeout(t);
+  }, [onHide]);
+  return (
+    <div style={{
+      position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '12px 20px', borderRadius: 10,
+      background: '#1F2937', color: '#fff',
+      fontSize: 13, fontWeight: 500,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+      zIndex: 99999, whiteSpace: 'nowrap',
+      animation: 'fadeInUp 200ms ease',
+    }}>
+      <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5l3 3 6-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      {message}
+    </div>
+  );
+}
+
 /* ─── Change Role panel ─────────────────────────────────────── */
 function ChangeRolePanel({ member, bookName, onUpdate, onClose }) {
   const [role, setRole] = useState(member.role === 'Primary Admin' ? 'Book Admin' : member.role);
@@ -337,10 +378,40 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [userId, setUserId] = useState(null);
+  const [lookupState, setLookupState] = useState('idle'); // 'idle'|'checking'|'found'|'notfound'
   const [role, setRole] = useState('Data Operator');
+  const debounceRef = useRef(null);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canNext = isValidEmail;
+  const canNext = lookupState === 'found';
+
+  const handleEmailChange = (val) => {
+    setEmail(val);
+    setUserId(null);
+    setName('');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = val.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setLookupState('idle');
+      return;
+    }
+    setLookupState('checking');
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await api.users.lookupByEmail(trimmed);
+        if (data.found) {
+          setName(data.user.name || '');
+          setUserId(data.user.id);
+          setLookupState('found');
+        } else {
+          setLookupState('notfound');
+        }
+      } catch {
+        setLookupState('notfound');
+      }
+    }, 600);
+  };
 
   const handleNext = () => {
     if (!canNext) return;
@@ -348,7 +419,7 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
   };
 
   const handleConfirm = () => {
-    onAdd({ name: name.trim() || email, email: email.trim(), role, user_id: null });
+    onAdd({ name: name.trim() || email, email: email.trim(), role, user_id: userId });
     onClose();
   };
 
@@ -365,31 +436,36 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
         {step === 1 && (
           <div style={{ padding: '24px 20px' }}>
             <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, padding: '20px' }}>
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>
                   Enter Email Address <span style={{ color: '#DC2626' }}>*</span>
                 </label>
-                <input
-                  autoFocus type="email" value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
-                  placeholder="e.g. member@gmail.com"
-                  style={{ width: '100%', padding: '9px 12px', border: `1px solid ${isValidEmail ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms' }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
-                  onBlur={(e) => e.target.style.borderColor = isValidEmail ? 'var(--blue)' : 'var(--gray-200)'}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    autoFocus type="email" value={email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
+                    placeholder="e.g. member@gmail.com"
+                    style={{ width: '100%', padding: '9px 36px 9px 12px', border: `1px solid ${lookupState === 'found' ? '#16A34A' : lookupState === 'notfound' ? '#DC2626' : isValidEmail ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms' }}
+                  />
+                  <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
+                    {lookupState === 'checking' && <div style={{ width: 14, height: 14, border: '2px solid #E5E7EB', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />}
+                    {lookupState === 'found' && <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+                    {lookupState === 'notfound' && <X size={14} color="#DC2626" />}
+                  </div>
+                </div>
+                {lookupState === 'found' && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
+                {lookupState === 'notfound' && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 5 }}>No CashBook user found with this email.</div>}
               </div>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Enter Name</label>
-                <input
-                  type="text" value={name} onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
-                  placeholder="Type the name of the member here"
-                  style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--gray-200)'}
-                />
-              </div>
+              {lookupState === 'found' && (
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Name</label>
+                  <input
+                    readOnly value={name}
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #16A34A', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#F0FDF4', color: 'var(--gray-800)', cursor: 'default' }}
+                  />
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
               <button onClick={onClose} style={{ padding: '9px 24px', borderRadius: 7, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>Cancel</button>
@@ -552,9 +628,11 @@ function AddMemberPanel({ businessName, bookName, bookMembers, businessTeam, onA
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--gray-100)' }}
                 onMouseEnter={e => { if (!alreadyInBook) e.currentTarget.style.background = 'var(--gray-50)'; }}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--blue)', flexShrink: 0 }}>
-                  {(m.name || '?')[0].toUpperCase()}
-                </div>
+                {(() => { const ac = avatarColor(m.name); return (
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: ac.color, flexShrink: 0 }}>
+                    {(m.name || '?')[0].toUpperCase()}
+                  </div>
+                ); })()}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.mobile || m.email || ''}</div>
@@ -644,6 +722,7 @@ export default function BookSettings() {
   const [changeRoleTarget, setChangeRoleTarget] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
   const [successAdded, setSuccessAdded] = useState(null);
+  const [toast, setToast] = useState(null);
 
   /* data operator role permissions */
   const [dataOpPerms, setDataOpPerms] = useState({
@@ -679,7 +758,7 @@ export default function BookSettings() {
         email: m.email || '',
         employee_id: m.employee_id || null,
         role: m.role,
-        isYou: m.is_owner ? true : (user?.id ? m.user_id === user.id : false),
+        isYou: user?.id ? m.user_id === user.id : m.is_owner,
       }));
       const sorted = [...mapped].sort((a, b) => (b.isYou ? 1 : 0) - (a.isYou ? 1 : 0));
       setBookMembers(sorted);
@@ -688,6 +767,11 @@ export default function BookSettings() {
       console.error('[members load]', err.message);
     }
   }, [businessId, bookId, user?.id]);
+
+  // Current user's role in this book (derived from loaded members)
+  const myBookRole = bookMembers.find(m => m.isYou)?.role || null;
+  // Can add members: Primary Admin (business owner) OR Book Admin (book role)
+  const canManageBook = isPrimaryAdmin || myBookRole === 'Book Admin';
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
@@ -801,7 +885,7 @@ export default function BookSettings() {
           {activeTab === 'members' && (
             <div style={{ maxWidth: 680 }}>
               {/* Add Members card */}
-              {isPrimaryAdmin && (
+              {canManageBook && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 20 }}>
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Add Members</div>
@@ -834,9 +918,11 @@ export default function BookSettings() {
                   const badgeStyle = ROLE_BADGE[m.role] || { bg: '#F3F4F6', color: '#374151' };
                   return (
                     <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < bookMembers.length - 1 ? '1px solid var(--gray-100)' : 'none', position: 'relative' }}>
-                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: m.isYou ? '#6366F1' : 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: m.isYou ? 'white' : 'var(--blue)', flexShrink: 0 }}>
-                        {m.name[0].toUpperCase()}
-                      </div>
+                      {(() => { const ac = avatarColor(m.name); return (
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: ac.color, flexShrink: 0 }}>
+                          {m.name[0].toUpperCase()}
+                        </div>
+                      ); })()}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.isYou ? 'You' : m.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>
@@ -845,7 +931,7 @@ export default function BookSettings() {
                         </div>
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: badgeStyle.bg, color: badgeStyle.color }}>{m.role}</span>
-                      {!m.isYou && isPrimaryAdmin && (
+                      {!m.isYou && (isPrimaryAdmin || (myBookRole === 'Book Admin' && m.role !== 'Primary Admin')) && (
                         <div ref={memberMenuId === m.id ? menuRef : null} style={{ position: 'relative' }}>
                           <button
                             onClick={() => setMemberMenuId(memberMenuId === m.id ? null : m.id)}
@@ -1052,6 +1138,8 @@ export default function BookSettings() {
           onUpdate={async (id, role) => {
             await api.members.updateRole(businessId, bookId, id, role);
             setBookMembers(prev => prev.map(m => m.id === id ? { ...m, role } : m));
+            setToast(`${changeRoleTarget.name} has been changed to ${role} in ${book.name}`);
+            setChangeRoleTarget(null);
           }}
           onClose={() => setChangeRoleTarget(null)}
         />
@@ -1078,6 +1166,7 @@ export default function BookSettings() {
           onClose={() => setSuccessAdded(null)}
         />
       )}
+      {toast && <Toast message={toast} onHide={() => setToast(null)} />}
     </div>
   );
 }

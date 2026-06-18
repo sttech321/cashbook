@@ -321,19 +321,26 @@ export default function CashbooksList() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700 }}>{currentBusiness?.name || 'Cashbooks'}</h1>
-          {isPrimaryAdmin && (
-            <div style={{
+          <div
+            onClick={() => navigate(`/businesses/${businessId}/team`)}
+            style={{
               display: 'flex', alignItems: 'center', gap: 6,
               color: 'var(--blue)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            }}>
-              <Users size={14} />
-              Business Team
-            </div>
-          )}
+              padding: '6px 12px', borderRadius: 6, border: '1px solid #BFDBFE',
+              background: '#EFF6FF',
+            }}
+          >
+            <Users size={14} />
+            Business Team
+          </div>
         </div>
 
         {/* Role Banner */}
-        <div style={S.roleBanner}>
+        <div style={{
+          ...S.roleBanner,
+          background: isPrimaryAdmin ? '#F0FDF4' : '#EFF6FF',
+          border: `1px solid ${isPrimaryAdmin ? '#BBF7D0' : '#BFDBFE'}`,
+        }}>
           <span style={{ fontSize: 14 }}>ℹ️</span>
           <span>Your Role: <strong>{currentBusiness?.my_role || 'Primary Admin'}</strong></span>
           <span style={{ color: 'var(--blue)', cursor: 'pointer', marginLeft: 4 }}>View</span>
@@ -431,24 +438,26 @@ export default function CashbooksList() {
                   >
                     <Copy size={14} />
                   </div>
-                  <div
-                    style={S.actionIcon(false)}
-                    title="Add members to book"
-                    onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}/settings`)}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <UserPlus size={14} />
-                  </div>
-                  <div
-                    style={S.actionIcon(false)}
-                    title="Export"
-                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <LogOut size={14} />
-                  </div>
                 </>
+              )}
+              <div
+                style={S.actionIcon(false)}
+                title="Book Members"
+                onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}/settings`)}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+              >
+                <UserPlus size={14} />
+              </div>
+              {isPrimaryAdmin && (
+                <div
+                  style={S.actionIcon(false)}
+                  title="Export"
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <LogOut size={14} />
+                </div>
               )}
             </div>
           </div>
