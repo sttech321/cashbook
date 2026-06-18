@@ -1,20 +1,10 @@
 const BASE = '/api';
 
-function getToken() {
-  return localStorage.getItem('cashbook_token');
-}
-
-function headers() {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getToken()}`,
-  };
-}
-
 async function req(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: headers(),
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json();
@@ -59,6 +49,17 @@ export const api = {
   },
 
   users: {
-    lookup: (mobile) => req('GET', `/users/lookup?mobile=${encodeURIComponent(mobile)}`),
+    lookupByEmail: (email) => req('GET', `/users/lookup?email=${encodeURIComponent(email)}`),
+  },
+
+  team: {
+    list:     (bizId)                   => req('GET',    `/businesses/${bizId}/team`),
+    add:      (bizId, body)             => req('POST',   `/businesses/${bizId}/team`, body),
+    update:   (bizId, id, body)         => req('PATCH',  `/businesses/${bizId}/team/${id}`, body),
+    remove:   (bizId, id)               => req('DELETE', `/businesses/${bizId}/team/${id}`),
+    getBooks:       (bizId, memberId)              => req('GET',    `/businesses/${bizId}/team/${memberId}/books`),
+    addToBook:      (bizId, memberId, body)        => req('POST',   `/businesses/${bizId}/team/${memberId}/books`, body),
+    updateBookRole: (bizId, memberId, bookId, role)=> req('PATCH',  `/businesses/${bizId}/team/${memberId}/books/${bookId}`, { role }),
+    removeFromBook: (bizId, memberId, bookId)      => req('DELETE', `/businesses/${bizId}/team/${memberId}/books/${bookId}`),
   },
 };

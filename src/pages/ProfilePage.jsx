@@ -24,16 +24,17 @@ function Toggle({ on, onChange }) {
 }
 
 /* ── Inline editable field ────────────────────────────── */
-function EditableField({ label, value, onSave, placeholder = '', type = 'text', readOnly = false }) {
+function EditableField({ label, value, onSave, placeholder = '', type = 'text' }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value || '');
+  const [draft, setDraft]     = useState(value || '');
   const inputRef = useRef(null);
 
   useEffect(() => { setDraft(value || ''); }, [value]);
   useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
 
   const save = () => {
-    if (draft.trim() !== value) onSave(draft.trim());
+    const trimmed = draft.trim();
+    if (trimmed !== (value || '')) onSave(trimmed);
     setEditing(false);
   };
 
@@ -52,39 +53,28 @@ function EditableField({ label, value, onSave, placeholder = '', type = 'text', 
               onBlur={save}
               placeholder={placeholder}
               style={{
-                flex: 1, fontSize: 14, padding: '6px 10px',
-                border: '1.5px solid #2563EB', borderRadius: 6, outline: 'none',
+                flex: 1, fontSize: 14, padding: '6px 0',
+                border: 'none', borderBottom: '1.5px solid #2563EB',
+                outline: 'none', background: 'transparent', color: '#111827',
               }}
             />
-            <div
-              onClick={save}
-              style={{
-                width: 28, height: 28, borderRadius: 6, background: '#EFF6FF',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-              }}
-            >
-              <Check size={14} color="#2563EB" />
+            <div onClick={save} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
+              <Check size={15} color="#2563EB" />
             </div>
           </>
         ) : (
           <>
-            <span style={{
-              flex: 1, fontSize: 14, color: value ? '#111827' : '#9CA3AF',
-            }}>
+            <span style={{ flex: 1, fontSize: 14, color: value ? '#111827' : '#9CA3AF' }}>
               {value || placeholder}
             </span>
-            {!readOnly && (
-              <div
-                onClick={() => setEditing(true)}
-                style={{
-                  width: 28, height: 28, borderRadius: 6, background: '#F9FAFB',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', border: '1px solid #E5E7EB',
-                }}
-              >
-                <Pencil size={13} color="#6B7280" />
-              </div>
-            )}
+            <div
+              onClick={() => setEditing(true)}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 4 }}
+              onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <Pencil size={14} color="#6B7280" />
+            </div>
           </>
         )}
       </div>
@@ -264,37 +254,33 @@ function ProfileHeader() {
 
 /* ── Main Profile Page ────────────────────────────────── */
 export default function ProfilePage() {
-  const { user, logout, updateUser, token } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   const displayName = user?.name || user?.email?.split('@')[0] || '';
+  const [profileError, setProfileError] = useState(null);
 
-  const updateName = async (name) => {
-    if (!name) return;
-    setSaving(true);
+  const patchProfile = async (fields) => {
+    setProfileError(null);
     try {
-      await fetch('/api/auth/me', {
+      const res  = await fetch('/api/auth/me', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
       });
-    } catch { /* best effort */ }
-    updateUser({ name });
-    setSaving(false);
-  };
-
-  const updateEmail = async (email) => {
-    if (!email) return;
-    try {
-      await fetch('/api/auth/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ email }),
-      });
-    } catch { /* best effort */ }
-    updateUser({ email });
+      const data = await res.json();
+      if (!res.ok) {
+        setProfileError(data.error || 'Failed to update profile');
+        return;
+      }
+      // Use full user object from server response
+      if (data.user) updateUser(data.user);
+      else updateUser(fields);
+    } catch {
+      setProfileError('Network error. Please try again.');
+    }
   };
 
   const initials = (user?.name || 'U').charAt(0).toUpperCase();
@@ -319,12 +305,27 @@ export default function ProfilePage() {
               <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Your Profile Details</span>
             </div>
 
+            {/* Error banner */}
+            {profileError && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8,
+                marginBottom: 4,
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span style={{ fontSize: 13, color: '#DC2626', flex: 1 }}>{profileError}</span>
+                <button onClick={() => setProfileError(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+              </div>
+            )}
+
             {/* Name */}
             <EditableField
               label="Name"
               value={displayName}
               placeholder="Enter your name"
-              onSave={updateName}
+              onSave={(name) => patchProfile({ name })}
             />
 
             {/* Mobile */}
@@ -333,15 +334,14 @@ export default function ProfilePage() {
               value={user?.mobile || ''}
               placeholder="Enter mobile number"
               type="tel"
-              readOnly
-              onSave={() => {}}
+              onSave={(mobile) => patchProfile({ mobile })}
             />
 
             {/* Email */}
             <div style={{ padding: '16px 0', borderBottom: '1px solid #F3F4F6' }}>
               <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6, fontWeight: 500 }}>Email</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <EmailField value={user?.email || ''} onSave={updateEmail} />
+                <EmailField value={user?.email || ''} onSave={(email) => patchProfile({ email })} />
                 <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>OR</span>
                 <button style={{
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -389,16 +389,20 @@ export default function ProfilePage() {
 /* ── Email field with pencil ──────────────────────────── */
 function EmailField({ value, onSave }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
+  const [draft, setDraft]     = useState(value || '');
   const inputRef = useRef(null);
 
-  useEffect(() => { setDraft(value); }, [value]);
+  useEffect(() => { setDraft(value || ''); }, [value]);
   useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
 
-  const save = () => { if (draft !== value) onSave(draft); setEditing(false); };
+  const save = () => { if (draft.trim() !== value) onSave(draft.trim()); setEditing(false); };
 
   return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, border: '1.5px solid #E5E7EB', borderRadius: 7, padding: '6px 10px' }}>
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+      border: `1.5px solid ${editing ? '#2563EB' : '#E5E7EB'}`,
+      borderRadius: 7, padding: '7px 10px', transition: 'border-color 150ms',
+    }}>
       {editing ? (
         <input
           ref={inputRef}
@@ -408,13 +412,18 @@ function EmailField({ value, onSave }) {
           onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
           onBlur={save}
           placeholder="Enter your email"
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: '#111827' }}
+          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: '#111827', background: 'transparent' }}
         />
       ) : (
-        <span style={{ flex: 1, fontSize: 13, color: value ? '#111827' : '#9CA3AF' }}>{value || 'Enter your email'}</span>
+        <span style={{ flex: 1, fontSize: 13, color: value ? '#111827' : '#9CA3AF' }}>
+          {value || 'Enter your email'}
+        </span>
       )}
-      <div onClick={() => setEditing(!editing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-        <Pencil size={13} color="#6B7280" />
+      <div
+        onClick={() => setEditing(v => !v)}
+        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+      >
+        <Pencil size={13} color={editing ? '#2563EB' : '#6B7280'} />
       </div>
     </div>
   );

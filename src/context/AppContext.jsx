@@ -66,6 +66,7 @@ export function AppProvider({ children }) {
       businessId: b.business_id,
       createdAt: b.created_at,
       transactionCount: parseInt(b.transaction_count || 0, 10),
+      memberCount: parseInt(b.member_count || 1, 10),
     };
   }
 
@@ -120,6 +121,7 @@ export function AppProvider({ children }) {
   const { user: authUser } = useAuth();
   const userName = authUser?.name || authUser?.email?.split('@')[0] || 'User';
   const user = {
+    id: authUser?.id || null,
     name: userName,
     mobile: authUser?.mobile || '',
     email: authUser?.email || '',

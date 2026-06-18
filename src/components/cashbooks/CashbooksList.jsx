@@ -299,6 +299,7 @@ const NOTIFICATIONS = [
 export default function CashbooksList() {
   const { cashbooks, addCashbook, renameCashbook, currentBusiness } = useApp();
   const { businessId } = useParams();
+  const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [hoveredId, setHoveredId] = useState(null);
@@ -320,19 +321,21 @@ export default function CashbooksList() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700 }}>{currentBusiness?.name || 'Cashbooks'}</h1>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            color: 'var(--blue)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>
-            <Users size={14} />
-            Business Team
-          </div>
+          {isPrimaryAdmin && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              color: 'var(--blue)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>
+              <Users size={14} />
+              Business Team
+            </div>
+          )}
         </div>
 
         {/* Role Banner */}
         <div style={S.roleBanner}>
           <span style={{ fontSize: 14 }}>ℹ️</span>
-          <span>Your Role: <strong>Primary Admin</strong></span>
+          <span>Your Role: <strong>{currentBusiness?.my_role || 'Primary Admin'}</strong></span>
           <span style={{ color: 'var(--blue)', cursor: 'pointer', marginLeft: 4 }}>View</span>
         </div>
 
@@ -401,51 +404,58 @@ export default function CashbooksList() {
             </div>
             <div>
               <div style={S.bookName}>{book.name}</div>
-              <div style={S.bookMeta}>Created {timeAgo(book.createdAt)}</div>
+              <div style={S.bookMeta}>
+                {(book.memberCount || 0) > 1 ? `${book.memberCount} members • ` : ''}
+                Updated {timeAgo(book.updated_at || book.created_at || book.createdAt)}
+              </div>
             </div>
             <div style={S.bookActions} onClick={(e) => e.stopPropagation()}>
               <div style={S.badge}>{book.transactionCount}</div>
-              <div
-                style={S.actionIcon(false)}
-                title="Rename"
-                onClick={() => setRenameBook(book)}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-              >
-                <Pencil size={14} />
-              </div>
-              <div
-                style={S.actionIcon(false)}
-                title="Duplicate"
-                onClick={() => setDuplicateBook(book)}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-              >
-                <Copy size={14} />
-              </div>
-              <div
-                style={S.actionIcon(false)}
-                title="Add members to book"
-                onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}/settings`)}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-              >
-                <UserPlus size={14} />
-              </div>
-              <div
-                style={S.actionIcon(false)}
-                title="Export"
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
-              >
-                <LogOut size={14} />
-              </div>
+              {isPrimaryAdmin && (
+                <>
+                  <div
+                    style={S.actionIcon(false)}
+                    title="Rename"
+                    onClick={() => setRenameBook(book)}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Pencil size={14} />
+                  </div>
+                  <div
+                    style={S.actionIcon(false)}
+                    title="Duplicate"
+                    onClick={() => setDuplicateBook(book)}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Copy size={14} />
+                  </div>
+                  <div
+                    style={S.actionIcon(false)}
+                    title="Add members to book"
+                    onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}/settings`)}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <UserPlus size={14} />
+                  </div>
+                  <div
+                    style={S.actionIcon(false)}
+                    title="Export"
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <LogOut size={14} />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ))}
 
-        {/* Add New Book CTA */}
-        <div style={S.addCta} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
+        {/* Add New Book CTA — Primary Admin only */}
+        {isPrimaryAdmin && <div style={S.addCta} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
           <div style={S.addCtaRow}>
             <div style={{ ...S.bookIcon, background: '#E0E7FF' }}>
               <span style={{ fontSize: 18 }}>📗</span>
@@ -473,15 +483,17 @@ export default function CashbooksList() {
               </span>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Right Sidebar */}
       <div style={S.sidebar}>
-        <button style={S.addBookBtn} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
-          <Plus size={15} />
-          Add New Book
-        </button>
+        {isPrimaryAdmin && (
+          <button style={S.addBookBtn} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
+            <Plus size={15} />
+            Add New Book
+          </button>
+        )}
 
         <div style={S.sideWidget}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>

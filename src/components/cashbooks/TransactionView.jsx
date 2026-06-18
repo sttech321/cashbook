@@ -553,7 +553,7 @@ function TimePicker({ hour, minute, period, onChange }) {
 /* ─── Add New Party Modal ───────────────────────────────────── */
 function AddPartyModal({ onSave, onClose }) {
   const [name, setName] = useState('');
-  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [partyType, setPartyType] = useState('Customer');
 
   return (
@@ -604,30 +604,20 @@ function AddPartyModal({ onSave, onClose }) {
             />
           </div>
 
-          {/* Mobile Number */}
+          {/* Email */}
           <div style={{ marginBottom: 18 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 6 }}>
-              Mobile Number <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--gray-400)' }}>(Optional)</span>
+              Email <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--gray-400)' }}>(Optional)</span>
             </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px',
-                border: '1px solid var(--gray-200)', borderRadius: 8, cursor: 'pointer',
-                background: 'var(--white)', flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 16 }}>🇮🇳</span>
-                <ChevronDown size={13} color="var(--gray-400)" />
-              </div>
-              <input
-                type="tel"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="e.g. 8772321230"
-                style={{ flex: 1, padding: '9px 12px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 13, outline: 'none' }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
-                onBlur={(e) => e.target.style.borderColor = 'var(--gray-200)'}
-              />
-            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. party@gmail.com"
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
+              onBlur={(e) => e.target.style.borderColor = 'var(--gray-200)'}
+            />
           </div>
 
           {/* Party Type */}
@@ -658,7 +648,7 @@ function AddPartyModal({ onSave, onClose }) {
           <button
             onClick={() => {
               if (!name.trim()) return;
-              onSave({ name: name.trim(), mobile, partyType });
+              onSave({ name: name.trim(), email: email.trim() || null, partyType });
               onClose();
             }}
             disabled={!name.trim()}
@@ -2198,10 +2188,12 @@ export default function TransactionView() {
                     { label: 'Bill', align: 'center' },
                     { label: 'Amount', align: 'right' },
                     { label: 'Balance', align: 'right' },
+                    { label: '', align: 'right' },
                   ].map((h) => (
                     <th key={h.label} style={{
                       padding: '9px 12px', textAlign: h.align,
                       fontSize: 12, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap',
+                      width: h.label === '' ? 72 : undefined,
                     }}>{h.label}</th>
                   ))}
                 </tr>
@@ -2272,39 +2264,39 @@ export default function TransactionView() {
                           </span>
                         </td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: rowBalance < 0 ? '#DC2626' : 'var(--gray-700)' }}>
-                              {formatAmount(Math.abs(rowBalance))}{rowBalance < 0 ? ' Dr' : ''}
-                            </span>
-                            {hoveredRowId === t.id && (
-                              <div style={{ display: 'flex', gap: 4 }}>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setEditTarget(t); }}
-                                  style={{ padding: '4px 6px', border: '1px solid #BFDBFE', borderRadius: 5, background: 'white', cursor: 'pointer', color: 'var(--blue)', display: 'flex', alignItems: 'center' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#EFF6FF'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                  title="Edit"
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setDeleteTargets([t]); }}
-                                  style={{ padding: '4px 6px', border: '1px solid #FCA5A5', borderRadius: 5, background: 'white', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                  title="Delete"
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                    <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: rowBalance < 0 ? '#DC2626' : 'var(--gray-700)' }}>
+                            {formatAmount(Math.abs(rowBalance))}{rowBalance < 0 ? ' Dr' : ''}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', whiteSpace: 'nowrap', width: 72 }}>
+                          {hoveredRowId === t.id && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditTarget(t); }}
+                                style={{ padding: '4px 6px', border: '1px solid #BFDBFE', borderRadius: 5, background: 'white', cursor: 'pointer', color: 'var(--blue)', display: 'flex', alignItems: 'center' }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#EFF6FF'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                title="Edit"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDeleteTargets([t]); }}
+                                style={{ padding: '4px 6px', border: '1px solid #FCA5A5', borderRadius: 5, background: 'white', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                title="Delete"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                </svg>
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );

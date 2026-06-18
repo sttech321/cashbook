@@ -180,15 +180,14 @@ export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
 
   const [slide, setSlide] = useState(0);
-  const [loginMode, setLoginMode] = useState('mobile'); // mobile | email
   const [step, setStep] = useState('input'); // input | otp
-  const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [timer, setTimer] = useState(0);
+  const [devOtp, setDevOtp] = useState('');
   const otpRef = useRef(null);
 
   // Redirect if already logged in
@@ -209,24 +208,15 @@ export default function LoginPage() {
     return () => clearTimeout(t);
   }, [timer]);
 
-  const identifier = loginMode === 'mobile' ? mobile : email;
-
   const handleSendOtp = async () => {
     setError('');
-    if (!identifier.trim()) {
-      setError(loginMode === 'mobile' ? 'Mobile number enter karo' : 'Email address enter karo');
-      return;
-    }
+    if (!email.trim()) { setError('Email address enter karo'); return; }
     setLoading(true);
     try {
-      const body = loginMode === 'mobile'
-        ? { mobile: mobile.startsWith('+') ? mobile : `+91${mobile}` }
-        : { email };
-
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email }),
       });
       let data;
       try { data = await res.json(); } catch { throw new Error('Server se connect nahi ho paya. Backend start karo.'); }
@@ -234,7 +224,8 @@ export default function LoginPage() {
 
       setStep('otp');
       setTimer(30);
-      setToast(`OTP sent to ${body.mobile || body.email}`);
+      setDevOtp(data._demo_otp || '');
+      setToast(data._demo_otp ? 'OTP generated (dev mode)' : `OTP sent to ${email}`);
       setTimeout(() => otpRef.current?.focus(), 100);
     } catch (err) {
       setError(err.message);
@@ -248,20 +239,17 @@ export default function LoginPage() {
     if (otp.length < 6) { setError('6-digit OTP enter karo'); return; }
     setLoading(true);
     try {
-      const body = loginMode === 'mobile'
-        ? { mobile: mobile.startsWith('+') ? mobile : `+91${mobile}`, otp }
-        : { email, otp };
-
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email, otp }),
       });
       let data;
       try { data = await res.json(); } catch { throw new Error('Server se connect nahi ho paya. Backend start karo.'); }
       if (!res.ok) throw new Error(data.error || 'OTP verification failed');
 
-      login(data.token, data.user);
+      login(data.user);
       navigate('/onboarding', { replace: true });
     } catch (err) {
       setError(err.message);
@@ -278,7 +266,7 @@ export default function LoginPage() {
   };
 
   const currentSlide = SLIDES[slide];
-  const canSend = identifier.trim().length >= (loginMode === 'mobile' ? 10 : 6);
+  const canSend = email.trim().length >= 6;
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -359,64 +347,28 @@ export default function LoginPage() {
           <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, padding: '24px', background: 'white' }}>
             {step === 'input' ? (
               <>
-                {loginMode === 'mobile' ? (
-                  /* Mobile input */
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 8 }}>
-                      Enter your mobile Number
-                    </label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {/* Country selector */}
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        padding: '10px 10px', border: '1.5px solid #D1D5DB',
-                        borderRadius: 8, cursor: 'pointer', flexShrink: 0,
-                        fontSize: 13, color: '#374151',
-                      }}>
-                        <span>🇮🇳</span>
-                        <span style={{ fontSize: 11 }}>▼</span>
-                      </div>
-                      <input
-                        type="tel"
-                        value={mobile}
-                        onChange={(e) => { setMobile(e.target.value.replace(/\D/g, '')); setError(''); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && canSend) handleSendOtp(); }}
-                        placeholder="e.g. 8772321230"
-                        maxLength={10}
-                        autoFocus
-                        style={{
-                          flex: 1, padding: '10px 14px',
-                          border: '1.5px solid #D1D5DB',
-                          borderRadius: 8, fontSize: 14, outline: 'none',
-                          transition: 'border-color 150ms',
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#2563EB'}
-                        onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  /* Email input */
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 8 }}>
-                      Enter your email address
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && canSend) handleSendOtp(); }}
-                      placeholder="xyz123@gmail.com"
-                      autoFocus
-                      style={{
-                        width: '100%', padding: '10px 14px',
-                        border: '1.5px solid #2563EB',
-                        borderRadius: 8, fontSize: 14, outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                )}
+                {/* Email input */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 8 }}>
+                    Enter your email address
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && canSend) handleSendOtp(); }}
+                    placeholder="xyz123@gmail.com"
+                    autoFocus
+                    style={{
+                      width: '100%', padding: '10px 14px',
+                      border: `1.5px solid ${email.trim() ? '#2563EB' : '#D1D5DB'}`,
+                      borderRadius: 8, fontSize: 14, outline: 'none',
+                      boxSizing: 'border-box', transition: 'border-color 150ms',
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#2563EB'}
+                    onBlur={(e) => e.target.style.borderColor = email.trim() ? '#2563EB' : '#D1D5DB'}
+                  />
+                </div>
 
                 {error && <p style={{ fontSize: 12, color: '#EF4444', marginBottom: 10 }}>{error}</p>}
 
@@ -431,32 +383,10 @@ export default function LoginPage() {
                     border: 'none', borderRadius: 8,
                     fontSize: 14, fontWeight: 700,
                     cursor: canSend && !loading ? 'pointer' : 'not-allowed',
-                    marginBottom: 16, transition: 'background 200ms',
+                    transition: 'background 200ms',
                   }}
                 >
                   {loading ? 'Sending…' : 'Send OTP'}
-                </button>
-
-                {/* OR divider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                  <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-                  <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>OR</span>
-                  <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
-                </div>
-
-                {/* Other ways to login */}
-                <button
-                  onClick={() => { setLoginMode(loginMode === 'mobile' ? 'email' : 'mobile'); setError(''); }}
-                  style={{
-                    width: '100%', padding: '11px',
-                    background: 'white', color: '#2563EB',
-                    border: '1.5px solid #E5E7EB', borderRadius: 8,
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                >
-                  {loginMode === 'mobile' ? 'Other Ways To Login' : '← Login with Mobile'}
                 </button>
               </>
             ) : (
@@ -464,18 +394,45 @@ export default function LoginPage() {
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <button
-                    onClick={() => { setStep('input'); setOtp(''); setError(''); }}
+                    onClick={() => { setStep('input'); setOtp(''); setError(''); setDevOtp(''); }}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#374151', padding: 0 }}
                   >←</button>
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>Enter OTP</span>
                 </div>
 
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: devOtp ? 10 : 16 }}>
                   Please enter the 6-digit OTP sent to{' '}
-                  <strong style={{ color: '#111827' }}>
-                    {loginMode === 'mobile' ? `+91${mobile}` : email}
-                  </strong>
+                  <strong style={{ color: '#111827' }}>{email}</strong>
                 </p>
+
+                {/* Dev mode OTP box */}
+                {devOtp && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', marginBottom: 14,
+                    background: '#FFF7ED', border: '1.5px dashed #F97316',
+                    borderRadius: 8,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9A3412', fontWeight: 600, marginBottom: 2 }}>
+                        DEV MODE — Email not sent
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#EA580C', letterSpacing: 4 }}>
+                        {devOtp}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setOtp(devOtp); setTimeout(() => otpRef.current?.focus(), 50); }}
+                      style={{
+                        padding: '6px 12px', borderRadius: 6,
+                        border: '1px solid #F97316', background: '#FFF',
+                        color: '#EA580C', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                      }}
+                    >
+                      Use this
+                    </button>
+                  </div>
+                )}
 
                 {/* OTP single input */}
                 <input
@@ -548,7 +505,6 @@ export default function LoginPage() {
               By clicking send OTP, you are indicating that you accept our{' '}
               <span style={{ color: '#2563EB', cursor: 'pointer' }}>Terms of Service</span> and{' '}
               <span style={{ color: '#2563EB', cursor: 'pointer' }}>Privacy Policy</span>.
-              {loginMode === 'mobile' && ' An SMS may be sent. Message & data rates may apply.'}
             </p>
           )}
 

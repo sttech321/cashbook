@@ -49,7 +49,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to="/onboarding" replace /> : <LandingPage />} />
       <Route
         path="/login"
         element={isAuthenticated

@@ -335,58 +335,24 @@ function SuccessModal({ memberName, role, bookName, totalCount, onAddMore, onClo
 /* ─── Add New Member modal ──────────────────────────────────── */
 function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
   const [step, setStep] = useState(1);
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [checking, setChecking] = useState(false);
-  const [userStatus, setUserStatus] = useState(null); // null | 'found' | 'not-found'
-  const [foundUserId, setFoundUserId] = useState(null);
   const [role, setRole] = useState('Data Operator');
 
-  const cleanPhone = phone.replace(/\D/g, '').slice(0, 10);
-
-  useEffect(() => {
-    if (cleanPhone.length !== 10) {
-      setChecking(false);
-      setUserStatus(null);
-      setFoundUserId(null);
-      return;
-    }
-    setChecking(true);
-    setUserStatus(null);
-    setFoundUserId(null);
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        const data = await api.users.lookup(cleanPhone);
-        if (!cancelled) {
-          setChecking(false);
-          if (data.found) {
-            setUserStatus('found');
-            setFoundUserId(data.user.id);
-            setName(prev => prev || data.user.name);
-          } else {
-            setUserStatus('not-found');
-          }
-        }
-      } catch {
-        if (!cancelled) { setChecking(false); setUserStatus('not-found'); }
-      }
-    }, 600);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [cleanPhone]);
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canNext = isValidEmail;
 
   const handleNext = () => {
-    if (!cleanPhone || cleanPhone.length < 10) return;
+    if (!canNext) return;
     setStep(2);
   };
 
   const handleConfirm = () => {
-    onAdd({ name: name || 'Unknown', mobile: `+91${cleanPhone}`, role, user_id: foundUserId || null });
+    onAdd({ name: name.trim() || email, email: email.trim(), role, user_id: null });
     onClose();
   };
 
-  const initials = (name || '?')[0].toUpperCase();
-  const isExisting = userStatus === 'found';
+  const initials = (name || email || '?')[0].toUpperCase();
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onClose}>
@@ -401,49 +367,38 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
             <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, padding: '20px' }}>
               <div style={{ marginBottom: 20 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>
-                  Enter Mobile Number <span style={{ color: '#DC2626' }}>*</span>
+                  Enter Email Address <span style={{ color: '#DC2626' }}>*</span>
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', border: '1px solid var(--gray-200)', borderRadius: 8, cursor: 'pointer', background: 'var(--white)', flexShrink: 0 }}>
-                    <span style={{ fontSize: 16 }}>🇮🇳</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-                  </div>
-                  <input
-                    autoFocus type="tel" value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="e.g. 8772321230"
-                    style={{ flex: 1, padding: '9px 12px', border: `1px solid ${cleanPhone.length === 10 ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, outline: 'none' }}
-                  />
-                </div>
+                <input
+                  autoFocus type="email" value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
+                  placeholder="e.g. member@gmail.com"
+                  style={{ width: '100%', padding: '9px 12px', border: `1px solid ${isValidEmail ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 150ms' }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
+                  onBlur={(e) => e.target.style.borderColor = isValidEmail ? 'var(--blue)' : 'var(--gray-200)'}
+                />
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: userStatus === 'found' ? 'var(--blue)' : 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Enter Name</label>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Enter Name</label>
                 <input
                   type="text" value={name} onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
                   placeholder="Type the name of the member here"
                   style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--gray-200)'}
                 />
-                {checking && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: 'var(--gray-500)' }}>
-                    <div style={{ width: 14, height: 14, border: '2px solid var(--gray-300)', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                    Checking if user exists...
-                  </div>
-                )}
-                {userStatus === 'found' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#16A34A', fontWeight: 500 }}>
-                    <Check size={12} /> CashBook user found! Name auto-filled.
-                  </div>
-                )}
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
               <button onClick={onClose} style={{ padding: '9px 24px', borderRadius: 7, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>Cancel</button>
               <button
                 onClick={handleNext}
-                disabled={cleanPhone.length < 10 || checking}
-                style={{ padding: '9px 28px', borderRadius: 7, border: 'none', background: cleanPhone.length === 10 && !checking ? 'var(--blue)' : 'var(--gray-200)', color: cleanPhone.length === 10 && !checking ? 'white' : 'var(--gray-400)', fontSize: 13, fontWeight: 600, cursor: cleanPhone.length === 10 && !checking ? 'pointer' : 'not-allowed' }}
+                disabled={!canNext}
+                style={{ padding: '9px 28px', borderRadius: 7, border: 'none', background: canNext ? 'var(--blue)' : 'var(--gray-200)', color: canNext ? 'white' : 'var(--gray-400)', fontSize: 13, fontWeight: 600, cursor: canNext ? 'pointer' : 'not-allowed' }}
               >
-                {checking ? 'Verifying...' : 'Next'}
+                Next
               </button>
             </div>
           </div>
@@ -451,46 +406,24 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
 
         {step === 2 && (
           <div style={{ padding: '0 0 20px' }}>
-            {isExisting ? (
-              <>
-                <div style={{ padding: '10px 20px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Info size={13} color="var(--blue)" />
-                  <span style={{ fontSize: 12, color: 'var(--gray-700)' }}>{name} will be added to this business too</span>
-                </div>
-                <div style={{ padding: '12px 20px 0' }}>
-                  <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.6 }}>
-                    <strong>{name}</strong> is already using CashBook app. Choose their role in this book to add them
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div style={{ padding: '14px 20px 0' }}>
-                <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.6 }}>
-                  {name || 'This user'} is a new user. Send invite to <strong>+91{cleanPhone}</strong> to join this book.
-                </p>
-              </div>
-            )}
+            <div style={{ padding: '14px 20px 0' }}>
+              <p style={{ fontSize: 13, color: 'var(--gray-600)', lineHeight: 1.6 }}>
+                An invitation will be sent to <strong>{email}</strong> to join this book.
+              </p>
+            </div>
 
-            <div style={{ padding: '0 20px 16px' }}>
+            <div style={{ padding: '16px 20px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 14 }}>
                 <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, fontWeight: 700, color: 'var(--blue)' }}>{initials}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gray-900)' }}>{name || `+91${cleanPhone}`}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>+91{cleanPhone}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gray-900)' }}>{name || email}</div>
+                  <div style={{ fontSize: 12, color: 'var(--gray-400)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: isExisting ? '#DBEAFE' : '#F3F4F6', color: isExisting ? 'var(--blue)' : 'var(--gray-500)' }}>
-                  {isExisting ? 'CashBook User' : 'Not a CashBook User'}
-                </span>
-              </div>
-
-              <div style={{ color: 'var(--blue)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 16 }}>
-                Show more options
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
 
               <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ padding: '14px 14px 8px', fontWeight: 700, fontSize: 14, borderBottom: '1px solid var(--gray-100)', color: 'var(--gray-900)' }}>Choose Role</div>
-                <div style={{ display: 'flex', gap: 8, padding: '12px 14px', borderBottom: '1px solid var(--gray-100)' }}>
+                <div style={{ display: 'flex', gap: 8, padding: '12px 14px', borderBottom: '1px solid var(--gray-100)', flexWrap: 'wrap' }}>
                   {['Data Operator', 'Viewer', 'Book Admin'].map((r) => (
                     <button key={r} onClick={() => setRole(r)} style={{
                       padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer',
@@ -531,10 +464,9 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '0 20px' }}>
-              <button onClick={() => { setStep(1); setFoundUserId(null); setUserStatus(null); }} style={{ padding: '9px 20px', borderRadius: 7, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>Change Mobile Number</button>
+              <button onClick={() => setStep(1)} style={{ padding: '9px 20px', borderRadius: 7, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>Change Email</button>
               <button onClick={handleConfirm} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', borderRadius: 7, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                {isExisting ? <Check size={14} /> : <UserPlus size={14} />}
-                {isExisting ? 'Add Member' : 'Invite to CashBook'}
+                <UserPlus size={14} /> Add Member
               </button>
             </div>
           </div>
@@ -545,9 +477,27 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
 }
 
 /* ─── Add member slide-over panel ───────────────────────────── */
-function AddMemberPanel({ businessName, bookName, bookMembers, addedIds, onAddNew, onClose }) {
+function AddMemberPanel({ businessName, bookName, bookMembers, businessTeam, onAddTeamMember, onAddNew, onClose }) {
   const [search, setSearch] = useState('');
-  const businessStaff = bookMembers.filter((m) => !m.isYou);
+  const [addingId, setAddingId] = useState(null);
+
+  // Set of user_ids already in book
+  const inBookUserIds = new Set(bookMembers.map(m => m.user_id).filter(Boolean));
+
+  const staffToShow = (businessTeam || []).filter(m =>
+    !m.is_owner &&
+    (m.name || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleAdd = async (tm) => {
+    if (addingId) return;
+    setAddingId(tm.id);
+    try {
+      await onAddTeamMember({ name: tm.name, mobile: tm.mobile || '', user_id: tm.user_id || null, role: 'Data Operator' });
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   return (
     <>
@@ -564,7 +514,8 @@ function AddMemberPanel({ businessName, bookName, bookMembers, addedIds, onAddNe
         <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--gray-100)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', border: '1px solid var(--gray-200)', borderRadius: 7, background: 'var(--gray-50)' }}>
             <Search size={13} color="var(--gray-400)" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or number..." style={{ border: 'none', background: 'none', outline: 'none', flex: 1, fontSize: 13 }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or number..."
+              style={{ border: 'none', background: 'none', outline: 'none', flex: 1, fontSize: 13 }} />
             <kbd style={{ padding: '1px 5px', background: 'var(--gray-200)', borderRadius: 3, fontSize: 11, color: 'var(--gray-500)' }}>/</kbd>
           </div>
         </div>
@@ -587,24 +538,39 @@ function AddMemberPanel({ businessName, bookName, bookMembers, addedIds, onAddNe
 
           <div style={{ padding: '10px 20px 6px', fontSize: 12, fontWeight: 600, color: 'var(--gray-500)' }}>Members of {businessName}</div>
 
-          {businessStaff.length === 0 ? (
-            <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--gray-400)' }}>There are no staff members in business!</div>
-          ) : businessStaff.filter((m) => m.name.toLowerCase().includes(search.toLowerCase())).map((m) => {
-            const isAdded = addedIds.has(m.id);
+          {staffToShow.length === 0 ? (
+            <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--gray-400)' }}>
+              {(businessTeam || []).filter(m => !m.is_owner).length === 0
+                ? 'There are no staff members in business!'
+                : 'No results found'}
+            </div>
+          ) : staffToShow.map((m) => {
+            const alreadyInBook = inBookUserIds.has(m.user_id);
+            const isAdding = addingId === m.id;
             return (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+              <div key={m.id}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--gray-100)' }}
+                onMouseEnter={e => { if (!alreadyInBook) e.currentTarget.style.background = 'var(--gray-50)'; }}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--blue)', flexShrink: 0 }}>
-                  {m.name[0].toUpperCase()}
+                  {(m.name || '?')[0].toUpperCase()}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.phone}</div>
+                  <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.mobile || m.email || ''}</div>
                 </div>
-                {isAdded ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#16A34A' }}>
+                {alreadyInBook ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#16A34A', flexShrink: 0 }}>
                     <Check size={13} /> ADDED
                   </div>
-                ) : null}
+                ) : (
+                  <button
+                    onClick={() => handleAdd(m)}
+                    disabled={isAdding}
+                    style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: isAdding ? '#E5E7EB' : 'var(--blue)', color: isAdding ? '#9CA3AF' : 'white', fontSize: 12, fontWeight: 600, cursor: isAdding ? 'default' : 'pointer', flexShrink: 0 }}>
+                    {isAdding ? '...' : 'ADD'}
+                  </button>
+                )}
               </div>
             );
           })}
@@ -661,6 +627,7 @@ function AddCategoryModal({ onAdd, onClose }) {
 export default function BookSettings() {
   const { businessId, bookId } = useParams();
   const { cashbooks, renameCashbook, deleteCashbook, addCashbook, currentBusiness, user } = useApp();
+  const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const navigate = useNavigate();
   const book = cashbooks.find((b) => b.id === bookId);
 
@@ -672,10 +639,17 @@ export default function BookSettings() {
   const [addedIds, setAddedIds] = useState(new Set());
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showAddNewModal, setShowAddNewModal] = useState(false);
+  const [businessTeam, setBusinessTeam] = useState([]);
   const [memberMenuId, setMemberMenuId] = useState(null);
   const [changeRoleTarget, setChangeRoleTarget] = useState(null);
   const [removeTarget, setRemoveTarget] = useState(null);
   const [successAdded, setSuccessAdded] = useState(null);
+
+  /* data operator role permissions */
+  const [dataOpPerms, setDataOpPerms] = useState({
+    add_entries: true, edit_own: false, delete_own: false,
+    view_all: true, view_balance: true, download: true,
+  });
 
   /* entry field */
   const [showParty, setShowParty] = useState(true);
@@ -702,10 +676,13 @@ export default function BookSettings() {
         user_id: m.user_id,
         name: m.name || 'Unknown',
         mobile: m.mobile || '',
+        email: m.email || '',
+        employee_id: m.employee_id || null,
         role: m.role,
-        isYou: !!m.is_owner && m.user_id === user?.id,
+        isYou: m.is_owner ? true : (user?.id ? m.user_id === user.id : false),
       }));
-      setBookMembers(mapped);
+      const sorted = [...mapped].sort((a, b) => (b.isYou ? 1 : 0) - (a.isYou ? 1 : 0));
+      setBookMembers(sorted);
       setAddedIds(new Set(mapped.map(m => m.id)));
     } catch (err) {
       console.error('[members load]', err.message);
@@ -713,6 +690,14 @@ export default function BookSettings() {
   }, [businessId, bookId, user?.id]);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  // Fetch business team when add panel opens (for the "Members of business" list)
+  useEffect(() => {
+    if (!showAddPanel || !businessId) return;
+    api.team.list(businessId)
+      .then(({ members }) => setBusinessTeam(members || []))
+      .catch(() => {});
+  }, [showAddPanel, businessId]);
 
   if (!book) {
     return (
@@ -733,7 +718,8 @@ export default function BookSettings() {
       const { member } = await api.members.add(businessId, bookId, {
         user_id: newMember.user_id || null,
         name: newMember.name,
-        mobile: newMember.mobile,
+        mobile: newMember.mobile || null,
+        email: newMember.email || null,
         role: newMember.role,
       });
       const mapped = {
@@ -741,6 +727,7 @@ export default function BookSettings() {
         user_id: member.user_id,
         name: member.name,
         mobile: member.mobile || '',
+        email: member.email || '',
         role: member.role,
         isYou: false,
       };
@@ -765,17 +752,19 @@ export default function BookSettings() {
           <span style={{ fontSize: 16, fontWeight: 700 }}>Settings</span>
           <span style={{ fontSize: 14, color: 'var(--gray-500)' }}>({book.name})</span>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => setModal('rename')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>
-            <Pencil size={13} /> Rename Book
-          </button>
-          <button onClick={() => setModal('duplicate')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>
-            <Copy size={13} /> Duplicate Book
-          </button>
-          <button onClick={() => setModal('delete')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#DC2626', fontWeight: 500 }}>
-            <Trash2 size={13} /> Delete Book
-          </button>
-        </div>
+        {isPrimaryAdmin && (
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button onClick={() => setModal('rename')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>
+              <Pencil size={13} /> Rename Book
+            </button>
+            <button onClick={() => setModal('duplicate')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 500 }}>
+              <Copy size={13} /> Duplicate Book
+            </button>
+            <button onClick={() => setModal('delete')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#DC2626', fontWeight: 500 }}>
+              <Trash2 size={13} /> Delete Book
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -784,6 +773,7 @@ export default function BookSettings() {
           {[
             { key: 'members', label: 'Members', sub: 'Add, Change role, Remove' },
             { key: 'entry-field', label: 'Entry Field', sub: 'Party, Category, Payment mode & Custom Fields', badge: true },
+            ...(isPrimaryAdmin ? [{ key: 'edit-role', label: 'Edit Data Operator Role', sub: 'Make changes in role as per your need' }] : []),
           ].map(({ key, label, sub, badge }) => (
             <div
               key={key}
@@ -811,20 +801,22 @@ export default function BookSettings() {
           {activeTab === 'members' && (
             <div style={{ maxWidth: 680 }}>
               {/* Add Members card */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 20 }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Add Members</div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.5 }}>
-                    Manage your cashflow together with your business admins,<br />family or friends by adding them as members
+              {isPrimaryAdmin && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 20 }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Add Members</div>
+                    <div style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.5 }}>
+                      Manage your cashflow together with your business admins,<br />family or friends by adding them as members
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setShowAddPanel(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, marginLeft: 20 }}
+                  >
+                    <UserPlus size={15} /> Add member
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowAddPanel(true)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0, marginLeft: 20 }}
-                >
-                  <UserPlus size={15} /> Add member
-                </button>
-              </div>
+              )}
 
               {/* Member count + roles link */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -847,10 +839,13 @@ export default function BookSettings() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.isYou ? 'You' : m.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.phone}</div>
+                        <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>
+                          {m.mobile || m.email || ''}
+                          {m.employee_id ? ` | ${m.employee_id}` : ''}
+                        </div>
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: badgeStyle.bg, color: badgeStyle.color }}>{m.role}</span>
-                      {!m.isYou && (
+                      {!m.isYou && isPrimaryAdmin && (
                         <div ref={memberMenuId === m.id ? menuRef : null} style={{ position: 'relative' }}>
                           <button
                             onClick={() => setMemberMenuId(memberMenuId === m.id ? null : m.id)}
@@ -881,6 +876,35 @@ export default function BookSettings() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Edit Data Operator Role tab */}
+          {activeTab === 'edit-role' && (
+            <div style={{ maxWidth: 680 }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Edit Data Operator Role</div>
+                <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Customize what Data Operators can do in this book</div>
+              </div>
+              <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
+                {[
+                  { label: 'Add Cash In / Cash Out entries', key: 'add_entries' },
+                  { label: 'Edit entries (added by themselves)', key: 'edit_own' },
+                  { label: 'Delete entries (added by themselves)', key: 'delete_own' },
+                  { label: 'View entries by everyone', key: 'view_all' },
+                  { label: 'View net balance', key: 'view_balance' },
+                  { label: 'Download PDF or Excel', key: 'download' },
+                ].map(({ label, key }, i, arr) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
+                    <span style={{ fontSize: 13, color: 'var(--gray-800)' }}>{label}</span>
+                    <Toggle on={!!dataOpPerms[key]} onChange={(v) => setDataOpPerms(p => ({ ...p, [key]: v }))} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 16, padding: '12px 14px', background: '#EFF6FF', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <Info size={14} color="var(--blue)" style={{ flexShrink: 0, marginTop: 1 }} />
+                <span style={{ fontSize: 12, color: 'var(--gray-700)' }}>Changes here affect all Data Operators in this book. Book Admins and Primary Admin always have full access.</span>
               </div>
             </div>
           )}
@@ -1007,7 +1031,8 @@ export default function BookSettings() {
           businessName={businessName}
           bookName={book.name}
           bookMembers={bookMembers}
-          addedIds={addedIds}
+          businessTeam={businessTeam}
+          onAddTeamMember={handleMemberAdded}
           onAddNew={() => { setShowAddPanel(false); setShowAddNewModal(true); }}
           onClose={() => setShowAddPanel(false)}
         />

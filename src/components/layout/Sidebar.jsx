@@ -4,6 +4,7 @@ import {
   LayoutDashboard, BookOpen, Users, Settings, Sparkles,
   HelpCircle, Phone, ChevronDown, Wallet,
 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 const styles = {
   sidebar: {
@@ -93,6 +94,8 @@ export default function Sidebar() {
   const { businessId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentBusiness } = useApp();
+  const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const [collapsed, setCollapsed] = useState({
     upi: false,
     bookkeeping: false,
@@ -149,12 +152,14 @@ export default function Sidebar() {
         />
         {!collapsed.settings && (
           <>
-            <NavItem
-              icon={Users}
-              label="Team"
-              active={is('/team')}
-              onClick={() => go(`/businesses/${bid}/team`)}
-            />
+            {isPrimaryAdmin && (
+              <NavItem
+                icon={Users}
+                label="Team"
+                active={is('/team')}
+                onClick={() => go(`/businesses/${bid}/team`)}
+              />
+            )}
             <NavItem
               icon={Settings}
               label="Business Settings"

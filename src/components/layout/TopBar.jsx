@@ -355,8 +355,8 @@ export default function TopBar() {
       {showAddBiz && (
         <AddBusinessModal
           onClose={() => setShowAddBiz(false)}
-          onAdd={(data) => {
-            const id = addBusiness(data);
+          onAdd={async (data) => {
+            const id = await addBusiness(data);
             navigate(`/businesses/${id}/cashbooks`);
           }}
         />

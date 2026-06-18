@@ -239,14 +239,18 @@ export default function AddBusinessModal({ onClose, onAdd }) {
   const [typeOpen, setTypeOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) { setNameError(true); return; }
+    if (creating) return;
     setCreating(true);
-    setTimeout(() => {
-      onAdd({ name: name.trim(), category, businessType });
-      setCreating(false);
+    try {
+      await onAdd({ name: name.trim(), category, businessType });
       onClose();
-    }, 400);
+    } catch (err) {
+      alert('Failed to create business: ' + err.message);
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (

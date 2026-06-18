@@ -81,11 +81,12 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (loadingBiz) return;
     if (businesses.length > 0) {
-      setStep('done');
+      const bizId = currentBusinessId || businesses[0]?.id;
+      navigate(`/businesses/${bizId}/cashbooks`, { replace: true });
     } else {
       setStep('details');
     }
-  }, [loadingBiz, businesses.length]);
+  }, [loadingBiz, businesses.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToDashboard = () => {
     const bizId = currentBusinessId || businesses[0]?.id;
