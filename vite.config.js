@@ -17,5 +17,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: parseInt(process.env.PORT) || 4173,
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'https://cashbook-backend-eyji.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 })
