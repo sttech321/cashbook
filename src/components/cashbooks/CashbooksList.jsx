@@ -5,6 +5,7 @@ import {
   X, Check, Users, Info, BookOpen, Mail, CreditCard, MessageCircle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useWindowWidth } from '../../hooks/useWindowWidth';
 
 const S = {
   page: { display: 'flex', minHeight: 'calc(100vh - var(--topbar-height))' },
@@ -309,6 +310,8 @@ export default function CashbooksList() {
   const { businessId } = useParams();
   const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const navigate = useNavigate();
+  const windowWidth = useWindowWidth();
+  const isTablet = windowWidth <= 1024;
   const [search, setSearch] = useState('');
   const [hoveredId, setHoveredId] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -329,17 +332,29 @@ export default function CashbooksList() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h1 style={S.pageTitle}>{currentBusiness?.name || 'Cashbooks'}</h1>
-          <div
-            onClick={() => navigate(`/businesses/${businessId}/team`)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              color: '#2563EB', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              padding: '7px 14px', borderRadius: 6, border: '1px solid #BFDBFE',
-              background: '#EFF6FF',
-            }}
-          >
-            <Users size={15} />
-            Business Team
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Show Add New Book inline on tablet (right sidebar hidden) */}
+            {isTablet && isPrimaryAdmin && (
+              <button
+                style={{ ...S.addBookBtn, marginBottom: 0, width: 'auto', padding: '9px 18px' }}
+                onClick={() => { setPrefilledName(''); setShowAdd(true); }}
+              >
+                <Plus size={15} />
+                Add New Book
+              </button>
+            )}
+            <div
+              onClick={() => navigate(`/businesses/${businessId}/team`)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                color: '#2563EB', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                padding: '7px 14px', borderRadius: 6, border: '1px solid #BFDBFE',
+                background: '#EFF6FF',
+              }}
+            >
+              <Users size={15} />
+              Business Team
+            </div>
           </div>
         </div>
 
@@ -506,8 +521,8 @@ export default function CashbooksList() {
         )}
       </div>
 
-      {/* Right Sidebar */}
-      <div style={S.sidebar}>
+      {/* Right Sidebar — hidden on tablet */}
+      <div style={{ ...S.sidebar, display: isTablet ? 'none' : undefined }}>
         {isPrimaryAdmin && (
           <button style={S.addBookBtn} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
             <Plus size={15} />

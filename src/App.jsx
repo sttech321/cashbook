@@ -9,10 +9,18 @@ import BookSettings from './components/cashbooks/BookSettings';
 import TeamPage from './components/team/TeamPage';
 import BusinessSettings from './components/settings/BusinessSettings';
 import WhatsNew from './components/shared/WhatsNew';
+import MobileBlock from './components/shared/MobileBlock';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ProfilePage from './pages/ProfilePage';
+import { useWindowWidth } from './hooks/useWindowWidth';
+
+function MobileGate({ children }) {
+  const width = useWindowWidth();
+  if (width <= 767) return <MobileBlock />;
+  return children;
+}
 
 /* ── Auth guard ────────────────────────────────────────── */
 function RequireAuth({ children }) {
@@ -101,10 +109,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <MobileGate>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </MobileGate>
   );
 }

@@ -53,3 +53,24 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; }
 }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
+/* ── Tablet: 768px – 1024px ─────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --sidebar-width: 180px;
+    --topbar-height: 56px;
+  }
+
+  /* Sidebar stays sticky; only its width narrows */
+  /* Main content fills remaining width and scrolls vertically */
+  body, #root {
+    overflow-x: hidden;
+  }
+}
+
+/* ── Large tablet / small laptop: 1024px – 1280px ────────── */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  :root {
+    --sidebar-width: 195px;
+  }
+}
