@@ -123,52 +123,73 @@ function AddFilterMenu({ available, onAdd, onClose }) {
   );
 }
 
-/* ─── Add New Member modal (centered) ──────────────────────── */
+/* ─── Add New Member modal (step 1 + step 2) ────────────────── */
 function AddTeamMemberPanel({ onClose, onInvite }) {
-  const [email, setEmail]         = useState('');
-  const [name, setName]           = useState('');
-  const [userId, setUserId]       = useState(null);
-  const [lookupState, setLookupState] = useState('idle'); // 'idle' | 'checking' | 'found' | 'notfound'
+  /* ── Step 1 state ── */
+  const [step, setStep]               = useState(1);
+  const [email, setEmail]             = useState('');
+  const [name, setName]               = useState('');
+  const [userId, setUserId]           = useState(null);
+  const [lookupState, setLookupState] = useState('idle'); // 'idle'|'checking'|'found'|'notfound'
   const debounceRef = useRef(null);
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canNext = lookupState === 'found';
+  /* ── Step 2 state ── */
+  const [selectedRole, setSelectedRole] = useState('Employee');
+  const [empId, setEmpId]               = useState('');
+  const [empIdOpen, setEmpIdOpen]       = useState(false);
+
+  const isValidEmail   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canNext        = isValidEmail && name.trim().length > 0;
+  const isExistingUser = lookupState === 'found';
 
   const handleEmailChange = (val) => {
     setEmail(val);
     setUserId(null);
     setName('');
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
     const trimmed = val.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setLookupState('idle');
-      return;
-    }
-
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setLookupState('idle'); return; }
     setLookupState('checking');
     debounceRef.current = setTimeout(async () => {
       try {
         const data = await api.users.lookupByEmail(trimmed);
-        if (data.found) {
-          setName(data.user.name || '');
-          setUserId(data.user.id);
-          setLookupState('found');
-        } else {
-          setLookupState('notfound');
-        }
-      } catch {
-        setLookupState('notfound');
-      }
+        if (data.found) { setName(data.user.name || ''); setUserId(data.user.id); setLookupState('found'); }
+        else             { setLookupState('notfound'); }
+      } catch { setLookupState('notfound'); }
     }, 600);
   };
 
-  const handleNext = () => {
-    if (!canNext) return;
-    onInvite({ name: name.trim(), email: email.trim(), role: 'Employee', user_id: userId });
+  const handleFinish = () => {
+    onInvite({ name: name.trim(), email: email.trim(), role: selectedRole, user_id: userId, employee_id: empId || null });
     onClose();
   };
+
+  /* Avatar */
+  const initial      = (name.trim() || email.trim() || '?').charAt(0).toUpperCase();
+  const AVATAR_BG    = ['#DBEAFE','#DCF3EB','#EDE9FE','#FEF3C7','#FCE7F3'];
+  const AVATAR_TEXT  = ['#1D4ED8','#15803D','#6D28D9','#854D0E','#9D174D'];
+  const colorIdx     = (initial.charCodeAt(0) || 0) % AVATAR_BG.length;
+
+  /* Role permissions for step 2 */
+  const ROLE_PERMISSIONS = {
+    'Employee': {
+      permissions: [
+        'Limited access to selected books',
+        'Primary Admin/Admin can assign Book Admin, Viewer or Operator role to Employee in any book',
+        'Can leave business from business settings',
+      ],
+      restrictions: [
+        'No access to books they are not part of',
+        'No option to delete books',
+        "Can't view employee details",
+      ],
+    },
+    'Admin': {
+      permissions: ['Full access to all books', 'Can manage team members', 'Can view and edit all settings'],
+      restrictions: ['Cannot delete business'],
+    },
+  };
+  const perms = ROLE_PERMISSIONS[selectedRole] || ROLE_PERMISSIONS['Employee'];
 
   return (
     <>
@@ -177,98 +198,199 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
 
       {/* Centered modal */}
       <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500, padding: 16 }}>
-        <div style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+        <div style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
 
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 18px' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>Add New Member</span>
-            <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4 }}>×</button>
-          </div>
-
-          {/* Body */}
-          <div style={{ padding: '4px 24px 24px' }}>
-            {/* Email card */}
-            <div style={{ border: `1px solid ${lookupState === 'found' ? '#22C55E' : lookupState === 'notfound' ? '#EF4444' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px', marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 10 }}>
-                Enter Email Address <span style={{ color: '#DC2626' }}>*</span>
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  autoFocus
-                  type="email"
-                  value={email}
-                  onChange={e => handleEmailChange(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && canNext) handleNext(); }}
-                  placeholder="e.g. member@gmail.com"
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 36px 10px 12px', border: `1px solid ${lookupState === 'found' ? '#22C55E' : lookupState === 'notfound' ? '#EF4444' : 'var(--gray-200)'}`, borderRadius: 7, fontSize: 14, color: '#111827', outline: 'none', background: '#fff', transition: 'border-color 150ms' }}
-                />
-                {/* Status icon inside input */}
-                {lookupState === 'checking' && (
-                  <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite', display: 'block' }}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>
-                  </div>
-                )}
-                {lookupState === 'found' && (
-                  <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
-                )}
-                {lookupState === 'notfound' && (
-                  <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  </div>
-                )}
+          {step === 1 ? (
+            /* ════════════ STEP 1 ════════════ */
+            <>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 18px', flexShrink: 0 }}>
+                <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>Add New Member</span>
+                <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4 }}>×</button>
               </div>
 
-              {/* Status message below input */}
-              {lookupState === 'checking' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#6B7280' }}>
-                  <span>Checking if user exists...</span>
+              {/* Body */}
+              <div style={{ padding: '4px 24px 24px', overflowY: 'auto', flex: 1 }}>
+                {/* Email card */}
+                <div style={{ border: `1px solid ${lookupState === 'found' ? '#22C55E' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 10 }}>
+                    Enter Email Address <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input autoFocus type="email" value={email}
+                      onChange={e => handleEmailChange(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && canNext) setStep(2); }}
+                      placeholder="e.g. member@gmail.com"
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 36px 10px 12px', border: `1px solid ${lookupState === 'found' ? '#22C55E' : 'var(--gray-200)'}`, borderRadius: 7, fontSize: 14, color: '#111827', outline: 'none', background: '#fff', transition: 'border-color 150ms' }}
+                    />
+                    {lookupState === 'checking' && (
+                      <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite', display: 'block' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      </div>
+                    )}
+                    {lookupState === 'found' && (
+                      <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  {lookupState === 'checking' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#6B7280' }}>
+                      <span>Checking if user exists...</span>
+                    </div>
+                  )}
+                  {lookupState === 'found' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#16A34A', fontWeight: 500 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      CashBook user found! Name auto-filled.
+                    </div>
+                  )}
                 </div>
-              )}
-              {lookupState === 'found' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#16A34A', fontWeight: 500 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  CashBook user found! Name auto-filled.
-                </div>
-              )}
-              {lookupState === 'notfound' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#DC2626', fontWeight: 500 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  No CashBook user found with this email.
-                </div>
-              )}
-            </div>
 
-            {/* Name field — shown only when user found, read-only */}
-            {lookupState === 'found' && (
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 8 }}>
-                  Member Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  readOnly
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #D1FAE5', borderRadius: 7, fontSize: 14, color: '#111827', outline: 'none', background: '#F0FDF4', cursor: 'default' }}
-                />
+                {/* Name card */}
+                <div style={{ border: `1px solid ${lookupState === 'found' ? '#D1FAE5' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px' }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 10 }}>
+                    Enter Name
+                  </label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)}
+                    placeholder="Type the name of the member here"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: `1px solid ${lookupState === 'found' ? '#D1FAE5' : 'var(--gray-200)'}`, borderRadius: 7, fontSize: 14, color: '#111827', outline: 'none', background: lookupState === 'found' ? '#F0FDF4' : '#fff', transition: 'border-color 150ms' }}
+                  />
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '14px 24px', borderTop: '1px solid var(--gray-100)' }}>
-            <button onClick={onClose}
-              style={{ padding: '9px 22px', borderRadius: 7, border: '1px solid var(--gray-300)', background: '#fff', fontSize: 14, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>
-              Cancel
-            </button>
-            <button onClick={handleNext} disabled={!canNext}
-              style={{ padding: '9px 28px', borderRadius: 7, background: canNext ? 'var(--blue)' : '#E5E7EB', color: canNext ? '#fff' : '#9CA3AF', fontSize: 14, fontWeight: 600, border: 'none', cursor: canNext ? 'pointer' : 'default' }}>
-              Next
-            </button>
-          </div>
+              {/* Footer */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '14px 24px', borderTop: '1px solid var(--gray-100)', flexShrink: 0 }}>
+                <button onClick={onClose} style={{ padding: '9px 22px', borderRadius: 7, border: '1px solid var(--gray-300)', background: '#fff', fontSize: 14, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button onClick={() => setStep(2)} disabled={!canNext}
+                  style={{ padding: '9px 28px', borderRadius: 7, background: canNext ? 'var(--blue)' : '#E5E7EB', color: canNext ? '#fff' : '#9CA3AF', fontSize: 14, fontWeight: 600, border: 'none', cursor: canNext ? 'pointer' : 'default' }}>
+                  Next
+                </button>
+              </div>
+            </>
+          ) : (
+            /* ════════════ STEP 2 ════════════ */
+            <>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px 16px', borderBottom: '1px solid #F3F4F6', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button onClick={() => setStep(1)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#374151', borderRadius: 4, padding: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+                    {isExistingUser ? 'Choose Role & Add' : 'Choose Role & Invite'}
+                  </span>
+                </div>
+                <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4 }}>×</button>
+              </div>
+
+              {/* Body — scrollable */}
+              <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px 8px' }}>
+
+                {/* Top message */}
+                <p style={{ fontSize: 13, color: '#374151', marginBottom: 16, lineHeight: 1.6 }}>
+                  {isExistingUser
+                    ? <><strong>{name}</strong> is already using CashBook app. Choose their role in this business and add</>
+                    : <><strong>{email}</strong> is a new user. Send invite to <strong>{email}</strong> to join this business</>
+                  }
+                </p>
+
+                {/* User card */}
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: AVATAR_BG[colorIdx], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: AVATAR_TEXT[colorIdx], flexShrink: 0 }}>
+                    {initial}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{name}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{email}</div>
+                  </div>
+                  <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: isExistingUser ? '#DBEAFE' : '#F3F4F6', color: isExistingUser ? '#1D4ED8' : '#6B7280', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {isExistingUser ? 'CashBook User' : 'Not a CashBook User'}
+                  </span>
+                </div>
+
+                {/* Set Employee ID — collapsible */}
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, marginBottom: 16, overflow: 'hidden' }}>
+                  <div onClick={() => setEmpIdOpen(p => !p)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer', background: empIdOpen ? '#F8FAFF' : '#fff' }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#2563EB' }}>Set Employee ID</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" style={{ transform: empIdOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                  {empIdOpen && (
+                    <div style={{ padding: '4px 16px 14px', borderTop: '1px solid #F3F4F6' }}>
+                      <input type="text" value={empId} onChange={e => setEmpId(e.target.value)}
+                        placeholder="e.g. EMP001"
+                        style={{ width: '100%', boxSizing: 'border-box', marginTop: 10, padding: '9px 12px', border: '1px solid #E5E7EB', borderRadius: 7, fontSize: 13, color: '#111827', outline: 'none' }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Choose Role */}
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '16px', marginBottom: 12 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 12 }}>Choose Role</div>
+
+                  {/* Role pills */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                    {['Employee', 'Admin'].map(role => {
+                      const isSel = selectedRole === role;
+                      return (
+                        <button key={role} onClick={() => setSelectedRole(role)}
+                          style={{ padding: '7px 20px', borderRadius: 20, border: `1.5px solid ${isSel ? '#2563EB' : '#E5E7EB'}`, background: '#fff', color: isSel ? '#2563EB' : '#374151', fontSize: 13, fontWeight: isSel ? 600 : 400, cursor: 'pointer', outline: 'none', transition: 'all 150ms' }}>
+                          {role}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Permissions */}
+                  {perms.permissions.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Permissions</div>
+                      {perms.permissions.map(p => (
+                        <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#22C55E"/><path d="M7 12l3.5 3.5L17 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{p}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Restrictions */}
+                  {perms.restrictions.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, margin: '12px 0 8px' }}>Restrictions</div>
+                      {perms.restrictions.map(r => (
+                        <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#EF4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
+                          <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{r}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+
+                {/* You can change this role later */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, fontSize: 12, color: '#6B7280' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  You can change this role later
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderTop: '1px solid var(--gray-100)', flexShrink: 0 }}>
+                <button onClick={() => setStep(1)} style={{ padding: '9px 0', border: 'none', background: 'none', fontSize: 14, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>
+                  Change Email
+                </button>
+                <button onClick={handleFinish}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 7, background: 'var(--blue)', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  {isExistingUser ? `Add as ${selectedRole}` : `Invite as ${selectedRole}`}
+                </button>
+              </div>
+            </>
+          )}
 
         </div>
       </div>
@@ -1569,10 +1691,10 @@ export default function TeamPage() {
     setMembers(prev => [...prev, {
       id:            `local_${Date.now()}`,
       name:          data.name,
-      mobile:        data.mobile,
-      email:         null,
-      employee_id:   null,
-      role:          'Employee',
+      mobile:        data.mobile || null,
+      email:         data.email  || null,
+      employee_id:   data.employee_id || null,
+      role:          data.role || 'Employee',
       invite_status: 'Pending',
       reports_to:    null,
       is_owner:      false,
