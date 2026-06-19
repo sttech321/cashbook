@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, Search, Plus, Keyboard, LogOut, Download, X } from 'lucide-react';
+import { ChevronDown, Search, Plus, Keyboard, LogOut, Download, X, LayoutGrid } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import AddBusinessModal from '../business/AddBusinessModal';
@@ -50,26 +50,24 @@ const S = {
   bizBtn: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
-    padding: '5px 10px',
-    borderRadius: 6,
-    border: '1px solid var(--gray-200)',
-    background: 'var(--white)',
+    gap: 8,
+    padding: '7px 12px 7px 10px',
+    borderRadius: 8,
+    border: '1px solid #E5E7EB',
+    background: '#fff',
     cursor: 'pointer',
     fontSize: 13,
     fontWeight: 500,
-    color: 'var(--gray-800)',
-    maxWidth: 200,
+    color: '#1F2937',
+    width: 260,
   },
   bizIcon: {
     width: 22,
     height: 22,
-    background: 'var(--blue-light)',
-    borderRadius: 4,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 10,
+    flexShrink: 0,
   },
   right: {
     display: 'flex',
@@ -121,14 +119,14 @@ const S = {
   },
   bizDropdown: {
     position: 'absolute',
-    top: 'calc(var(--topbar-height) + 4px)',
+    top: 'calc(var(--topbar-height) + 6px)',
     left: '50%',
     transform: 'translateX(-50%)',
-    background: 'var(--white)',
-    border: '1px solid var(--gray-200)',
+    background: '#fff',
+    border: '1px solid #E2E8F0',
     borderRadius: 10,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-    minWidth: 260,
+    boxShadow: '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+    width: 370,
     zIndex: 200,
     overflow: 'hidden',
   },
@@ -227,68 +225,87 @@ export default function TopBar() {
         {/* Business switcher */}
         <div style={S.center} ref={bizRef}>
           <button style={S.bizBtn} onClick={() => setShowBizDrop((v) => !v)}>
-            <div style={S.bizIcon}>🏢</div>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={S.bizIcon}>
+              <LayoutGrid size={16} color="#2563EB" />
+            </div>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
               {currentBusiness?.name || 'Select Business'}
             </span>
-            <ChevronDown size={14} style={{ marginLeft: 'auto', flexShrink: 0 }} />
+            <ChevronDown size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
           </button>
 
           {showBizDrop && (
             <div style={S.bizDropdown}>
-              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--gray-100)' }}>
+              {/* Search — first section, no header */}
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid #F1F5F9' }}>
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 10px', background: 'var(--gray-50)',
-                  borderRadius: 6, border: '1px solid var(--gray-200)',
+                  display: 'flex', alignItems: 'center',
+                  padding: '9px 12px', background: '#fff',
+                  borderRadius: 8, border: '1.5px solid #2563EB',
                 }}>
-                  <Search size={14} color="var(--gray-400)" />
                   <input
                     autoFocus
                     value={bizSearch}
                     onChange={(e) => setBizSearch(e.target.value)}
                     placeholder="Search Business"
-                    style={{ border: 'none', background: 'none', outline: 'none', flex: 1, fontSize: 13 }}
+                    style={{ border: 'none', background: 'none', outline: 'none', flex: 1, fontSize: 14, color: '#374151' }}
                   />
+                  <Search size={16} color="#6B7280" style={{ flexShrink: 0 }} />
                 </div>
               </div>
-              <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                {filtered.map((b) => (
-                  <div
-                    key={b.id}
-                    onClick={() => switchBiz(b.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                      cursor: 'pointer', background: b.id === currentBusiness?.id ? 'var(--blue-light)' : 'transparent',
-                    }}
-                    onMouseEnter={(e) => { if (b.id !== currentBusiness?.id) e.currentTarget.style.background = 'var(--gray-50)'; }}
-                    onMouseLeave={(e) => { if (b.id !== currentBusiness?.id) e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <div style={{
-                      width: 16, height: 16, borderRadius: '50%',
-                      border: `2px solid ${b.id === currentBusiness?.id ? 'var(--blue)' : 'var(--gray-300)'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {b.id === currentBusiness?.id && (
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--blue)' }} />
-                      )}
+
+              {/* Business list */}
+              <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                {filtered.map((b) => {
+                  const isSelected = b.id === currentBusiness?.id;
+                  return (
+                    <div
+                      key={b.id}
+                      onClick={() => switchBiz(b.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '11px 14px', cursor: 'pointer',
+                        background: isSelected ? '#EEF2FF' : '#fff',
+                        transition: 'background 100ms',
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#F8FAFC'; }}
+                      onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = '#fff'; }}
+                    >
+                      {/* Radio button */}
+                      <div style={{
+                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                        border: `2px solid ${isSelected ? '#2563EB' : '#CBD5E1'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: isSelected ? '#2563EB' : '#fff',
+                        boxSizing: 'border-box',
+                      }}>
+                        {isSelected && (
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />
+                        )}
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: isSelected ? 500 : 400, color: '#0F172A' }}>
+                        {b.name}
+                      </span>
                     </div>
-                    <span style={{ fontSize: 13 }}>{b.name}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              <div style={{ borderTop: '1px solid var(--gray-100)' }}>
-                <div
+
+              {/* Add New Business */}
+              <div style={{ padding: '12px 14px', borderTop: '1px solid #F1F5F9' }}>
+                <button
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '10px 14px', background: 'var(--blue)', color: 'var(--white)',
-                    cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    width: '100%', padding: '11px 0',
+                    background: '#4F6FE8', color: '#fff',
+                    border: 'none', borderRadius: 8,
+                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                   onClick={() => { setShowBizDrop(false); setBizSearch(''); setShowAddBiz(true); }}
                 >
-                  <Plus size={15} />
-                  <span>Add New Business</span>
-                </div>
+                  <Plus size={16} strokeWidth={2.5} />
+                  Add New Business
+                </button>
               </div>
             </div>
           )}

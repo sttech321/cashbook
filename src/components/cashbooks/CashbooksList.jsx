@@ -2,116 +2,122 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Search, SortAsc, Plus, Pencil, Copy, UserPlus, LogOut,
-  X, Check, Users, Info,
+  X, Check, Users, Info, BookOpen, Mail, CreditCard, MessageCircle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const S = {
   page: { display: 'flex', minHeight: 'calc(100vh - var(--topbar-height))' },
-  main: { flex: 1, padding: 24, minWidth: 0 },
-  header: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  pageTitle: { fontSize: 20, fontWeight: 700 },
+  main: { flex: 1, padding: '22px 26px', minWidth: 0 },
+  pageTitle: { fontSize: 22, fontWeight: 700, color: '#111827' },
   roleBanner: {
     display: 'flex', alignItems: 'center', gap: 8,
-    padding: '8px 14px', background: '#EFF6FF',
-    borderRadius: 6, fontSize: 13, marginBottom: 16,
-    border: '1px solid #BFDBFE',
+    padding: '9px 16px',
+    borderRadius: 6, fontSize: 14, marginBottom: 16,
   },
   controls: {
-    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+    display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
   },
   searchBox: {
     flex: 1, display: 'flex', alignItems: 'center', gap: 8,
-    border: '1px solid var(--gray-200)', borderRadius: 6,
-    padding: '7px 12px', background: 'var(--white)',
+    border: '1px solid #E5E7EB', borderRadius: 6,
+    padding: '9px 14px', background: '#fff',
   },
   sortBtn: {
     display: 'flex', alignItems: 'center', gap: 6,
-    padding: '7px 12px', border: '1px solid var(--gray-200)',
-    borderRadius: 6, fontSize: 13, background: 'var(--white)',
-    color: 'var(--gray-600)', cursor: 'pointer',
+    padding: '9px 16px', border: '1px solid #E5E7EB',
+    borderRadius: 6, fontSize: 14, background: '#fff',
+    color: '#6B7280', cursor: 'pointer', whiteSpace: 'nowrap',
+    fontWeight: 500,
   },
   bookCard: (hovered) => ({
     display: 'flex', alignItems: 'center',
-    padding: '14px 16px',
+    padding: '15px 18px',
     borderRadius: 8,
-    border: '1px solid var(--gray-200)',
+    border: '1px solid #E5E7EB',
     marginBottom: 8,
-    background: hovered ? 'var(--gray-50)' : 'var(--white)',
+    background: hovered ? '#F9FAFB' : '#fff',
     cursor: 'pointer',
     transition: 'background 150ms',
   }),
   bookIcon: {
-    width: 38, height: 38, borderRadius: 8,
-    background: '#EFF6FF', display: 'flex',
+    width: 44, height: 44, borderRadius: 9,
+    background: '#2563EB', display: 'flex',
     alignItems: 'center', justifyContent: 'center',
-    marginRight: 12, flexShrink: 0,
+    marginRight: 16, flexShrink: 0,
   },
-  bookName: { fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' },
-  bookMeta: { fontSize: 12, color: 'var(--gray-400)', marginTop: 2 },
+  bookName: { fontSize: 15, fontWeight: 600, color: '#111827' },
+  bookMeta: { fontSize: 13, color: '#9CA3AF', marginTop: 3 },
   bookActions: {
-    display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto',
+    display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto',
   },
-  actionIcon: (active) => ({
-    width: 30, height: 30, borderRadius: 6,
+  actionIcon: () => ({
+    width: 32, height: 32, borderRadius: 6,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    cursor: 'pointer', color: active ? 'var(--blue)' : 'var(--gray-400)',
-    background: active ? 'var(--blue-light)' : 'transparent',
+    cursor: 'pointer', color: '#9CA3AF',
+    background: 'transparent',
     transition: 'all 150ms',
   }),
-  badge: {
-    minWidth: 20, height: 20, borderRadius: 10,
-    background: 'var(--gray-100)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    fontSize: 11, fontWeight: 600, color: 'var(--gray-600)',
-    padding: '0 5px',
-  },
+  badge: (count) => ({
+    minWidth: 30, height: 24, borderRadius: 12,
+    background: count > 0 ? '#DCFCE7' : '#F3F4F6',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 12, fontWeight: 700,
+    color: count > 0 ? '#16A34A' : '#6B7280',
+    padding: '0 8px', marginRight: 6,
+  }),
   addCta: {
-    border: '1.5px dashed var(--gray-300)', borderRadius: 8,
-    padding: '16px', marginTop: 8, background: 'var(--gray-50)',
+    border: '1.5px dashed #D1D5DB', borderRadius: 8,
+    padding: '16px 18px', marginTop: 8, background: '#FAFAFA',
     cursor: 'pointer',
   },
-  addCtaRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 },
+  addCtaRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 },
   quickTag: {
     display: 'inline-flex', alignItems: 'center',
-    padding: '4px 12px', border: '1px solid var(--gray-300)',
-    borderRadius: 20, fontSize: 12, cursor: 'pointer',
-    color: 'var(--gray-600)', background: 'var(--white)',
-    marginRight: 6, marginBottom: 4,
+    padding: '6px 16px', border: '1px solid #E5E7EB',
+    borderRadius: 20, fontSize: 13, cursor: 'pointer',
+    color: '#6B7280', background: '#fff',
+    marginRight: 8, marginBottom: 4,
     transition: 'all 150ms',
   },
   sidebar: {
-    width: 280, flexShrink: 0, padding: '24px 16px',
-    borderLeft: '1px solid var(--gray-200)',
+    width: 290, flexShrink: 0, padding: '20px 18px',
+    borderLeft: '1px solid #F3F4F6',
   },
   addBookBtn: {
-    width: '100%', padding: '10px', borderRadius: 8,
-    background: 'var(--blue)', color: 'var(--white)',
-    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-    marginBottom: 14, border: 'none',
+    width: '100%', padding: '13px', borderRadius: 8,
+    background: '#2563EB', color: '#fff',
+    fontSize: 15, fontWeight: 600, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+    marginBottom: 16, border: 'none',
   },
   sideWidget: {
-    border: '1px solid var(--gray-200)', borderRadius: 10,
-    padding: '14px', marginBottom: 12,
+    border: '1px solid #E5E7EB', borderRadius: 10,
+    padding: '16px', marginBottom: 12,
   },
-  widgetTitle: { fontSize: 13, fontWeight: 600, marginBottom: 4 },
-  widgetDesc: { fontSize: 12, color: 'var(--gray-500)', marginBottom: 8 },
+  widgetIcon: (bg) => ({
+    width: 40, height: 40, borderRadius: 9,
+    background: bg, display: 'flex',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  }),
+  widgetTitle: { fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 },
+  widgetDesc: { fontSize: 13, color: '#6B7280', marginBottom: 12, lineHeight: '1.5' },
   widgetBtn: {
-    padding: '6px 14px', borderRadius: 6,
-    border: '1px solid var(--gray-300)', fontSize: 12,
-    fontWeight: 500, cursor: 'pointer', background: 'var(--white)',
+    padding: '8px 18px', borderRadius: 6,
+    border: '1.5px solid #2563EB', fontSize: 13,
+    fontWeight: 600, cursor: 'pointer', background: '#fff',
+    color: '#2563EB',
   },
-  // Modal
+  widgetLink: {
+    color: '#2563EB', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+    textDecoration: 'none',
+  },
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300,
   },
   modal: {
-    background: 'var(--white)', borderRadius: 12, padding: 24,
+    background: '#fff', borderRadius: 12, padding: 24,
     minWidth: 380, boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
   },
 };
@@ -141,7 +147,7 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
       <div style={{ ...S.modal, minWidth: 460 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Add New Book</h3>
-          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+          <X size={18} style={{ cursor: 'pointer', color: '#9CA3AF' }} onClick={onClose} />
         </div>
         <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
           Book Name
@@ -163,8 +169,10 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
             onClick={save}
             disabled={!name.trim() || saving}
             style={{
-              padding: '10px 32px', borderRadius: 6, background: name.trim() && !saving ? 'var(--blue)' : '#9CA3AF',
-              color: 'var(--white)', fontSize: 14, fontWeight: 700, cursor: name.trim() && !saving ? 'pointer' : 'not-allowed', border: 'none',
+              padding: '10px 32px', borderRadius: 6,
+              background: name.trim() && !saving ? '#2563EB' : '#9CA3AF',
+              color: '#fff', fontSize: 14, fontWeight: 700,
+              cursor: name.trim() && !saving ? 'pointer' : 'not-allowed', border: 'none',
             }}
           >{saving ? 'Saving...' : 'Save'}</button>
         </div>
@@ -180,7 +188,7 @@ function RenameModal({ book, onClose, onRename }) {
       <div style={S.modal} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600 }}>Rename Book</h3>
-          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+          <X size={18} style={{ cursor: 'pointer', color: '#9CA3AF' }} onClick={onClose} />
         </div>
         <input
           autoFocus
@@ -189,20 +197,20 @@ function RenameModal({ book, onClose, onRename }) {
           onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) { onRename(book.id, name.trim()); onClose(); } }}
           style={{
             width: '100%', padding: '9px 12px', borderRadius: 6,
-            border: '1px solid var(--gray-300)', fontSize: 14,
+            border: '1px solid #D1D5DB', fontSize: 14,
             outline: 'none', marginBottom: 16,
           }}
         />
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{
-            padding: '8px 16px', borderRadius: 6, border: '1px solid var(--gray-300)',
-            fontSize: 13, cursor: 'pointer', background: 'var(--white)',
+            padding: '8px 16px', borderRadius: 6, border: '1px solid #D1D5DB',
+            fontSize: 13, cursor: 'pointer', background: '#fff',
           }}>Cancel</button>
           <button
             onClick={() => { if (name.trim()) { onRename(book.id, name.trim()); onClose(); } }}
             style={{
-              padding: '8px 16px', borderRadius: 6, background: 'var(--blue)',
-              color: 'var(--white)', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
+              padding: '8px 16px', borderRadius: 6, background: '#2563EB',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
             }}
           >Save</button>
         </div>
@@ -224,51 +232,51 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
   ];
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
-      <div style={{ background: 'var(--white)', borderRadius: 12, width: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+      <div style={{ background: '#fff', borderRadius: 12, width: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F3F4F6' }}>
           <span style={{ fontSize: 16, fontWeight: 700 }}>Duplicate {book.name}</span>
-          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+          <X size={18} style={{ cursor: 'pointer', color: '#9CA3AF' }} onClick={onClose} />
         </div>
         <div style={{ padding: '10px 20px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Info size={14} color="var(--blue)" />
-          <span style={{ fontSize: 13, color: 'var(--gray-700)' }}>Create new book with same settings as {book.name}</span>
+          <Info size={14} color="#2563EB" />
+          <span style={{ fontSize: 13, color: '#374151' }}>Create new book with same settings as {book.name}</span>
         </div>
         <div style={{ padding: '20px' }}>
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 10 }}>
-              Step 1 : <span style={{ color: 'var(--blue)' }}>Choose New Book Name</span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 10 }}>
+              Step 1 : <span style={{ color: '#2563EB' }}>Choose New Book Name</span>
             </div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', display: 'block', marginBottom: 6 }}>
               Enter new book name <span style={{ color: '#DC2626' }}>*</span>
             </label>
             <input
               autoFocus value={name} onChange={(e) => setName(e.target.value)}
               placeholder="Enter new book name"
-              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--blue)', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #2563EB', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 12 }}>
-              Step 2 : <span style={{ color: 'var(--blue)' }}>Choose settings to duplicate</span>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>
+              Step 2 : <span style={{ color: '#2563EB' }}>Choose settings to duplicate</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {items.map(({ key, label }) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', cursor: 'pointer', background: settings[key] ? '#F8FAFF' : 'var(--white)' }}>
-                  <input type="checkbox" checked={settings[key]} onChange={() => setSettings((p) => ({ ...p, [key]: !p[key] }))} style={{ accentColor: 'var(--blue)', width: 16, height: 16, cursor: 'pointer' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--gray-800)' }}>{label}</span>
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 8, border: '1px solid #E5E7EB', cursor: 'pointer', background: settings[key] ? '#F8FAFF' : '#fff' }}>
+                  <input type="checkbox" checked={settings[key]} onChange={() => setSettings((p) => ({ ...p, [key]: !p[key] }))} style={{ accentColor: '#2563EB', width: 16, height: 16, cursor: 'pointer' }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#1F2937' }}>{label}</span>
                 </label>
               ))}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, padding: '14px 20px', borderTop: '1px solid var(--gray-100)', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 7, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
+        <div style={{ display: 'flex', gap: 10, padding: '14px 20px', borderTop: '1px solid #F3F4F6', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 13, cursor: 'pointer', color: '#374151' }}>
             <X size={13} /> Cancel
           </button>
           <button
             disabled={!name.trim() || saving}
             onClick={async () => { if (!name.trim() || saving) return; setSaving(true); try { await onDuplicate(name.trim()); onClose(); } catch (err) { alert(err.message); } finally { setSaving(false); } }}
-            style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: name.trim() ? 'var(--blue)' : 'var(--gray-200)', color: name.trim() ? 'white' : 'var(--gray-400)', fontSize: 13, fontWeight: 600, cursor: name.trim() ? 'pointer' : 'not-allowed' }}
+            style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: name.trim() ? '#2563EB' : '#E5E7EB', color: name.trim() ? '#fff' : '#9CA3AF', fontSize: 13, fontWeight: 600, cursor: name.trim() ? 'pointer' : 'not-allowed' }}
           >
             {saving ? 'Creating...' : 'Add New Book'}
           </button>
@@ -278,7 +286,7 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
   );
 }
 
-const QUICK_BOOKS = ['May Expenses', 'Client Record', 'Staff Salary', 'Cash Journal', 'Payable Book', 'Business Records'];
+const QUICK_BOOKS = ['June Expenses', 'Staff Salary', 'Cash Journal', 'Purchase order Book'];
 
 const NOTIFICATIONS = [
   {
@@ -319,18 +327,18 @@ export default function CashbooksList() {
     <div style={S.page}>
       <div style={S.main}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700 }}>{currentBusiness?.name || 'Cashbooks'}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h1 style={S.pageTitle}>{currentBusiness?.name || 'Cashbooks'}</h1>
           <div
             onClick={() => navigate(`/businesses/${businessId}/team`)}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              color: 'var(--blue)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              padding: '6px 12px', borderRadius: 6, border: '1px solid #BFDBFE',
+              color: '#2563EB', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              padding: '7px 14px', borderRadius: 6, border: '1px solid #BFDBFE',
               background: '#EFF6FF',
             }}
           >
-            <Users size={14} />
+            <Users size={15} />
             Business Team
           </div>
         </div>
@@ -341,9 +349,11 @@ export default function CashbooksList() {
           background: isPrimaryAdmin ? '#F0FDF4' : '#EFF6FF',
           border: `1px solid ${isPrimaryAdmin ? '#BBF7D0' : '#BFDBFE'}`,
         }}>
-          <span style={{ fontSize: 14 }}>ℹ️</span>
-          <span>Your Role: <strong>{currentBusiness?.my_role || 'Primary Admin'}</strong></span>
-          <span style={{ color: 'var(--blue)', cursor: 'pointer', marginLeft: 4 }}>View</span>
+          <Info size={14} color={isPrimaryAdmin ? '#16A34A' : '#2563EB'} />
+          <span style={{ fontSize: 13, color: '#374151' }}>
+            Your Role: <strong>{currentBusiness?.my_role || 'Primary Admin'}</strong>
+          </span>
+          <span style={{ color: '#2563EB', cursor: 'pointer', marginLeft: 4, fontSize: 13 }}>View</span>
         </div>
 
         {/* Notification banners */}
@@ -352,9 +362,8 @@ export default function CashbooksList() {
             {visibleNotifs.map((notif) => (
               <div key={notif.id} style={{
                 border: '1px solid #E5E7EB', borderRadius: 8,
-                padding: '12px 14px', background: 'white',
+                padding: '12px 14px', background: '#fff',
                 display: 'flex', alignItems: 'flex-start', gap: 10,
-                position: 'relative',
               }}>
                 {notif.icon && (
                   <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>
@@ -366,7 +375,7 @@ export default function CashbooksList() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>{notif.desc}</div>
                 </div>
                 {notif.hasArrow ? (
-                  <span style={{ fontSize: 14, color: '#9CA3AF', flexShrink: 0, cursor: 'pointer' }}>›</span>
+                  <span style={{ fontSize: 16, color: '#9CA3AF', flexShrink: 0, cursor: 'pointer', lineHeight: 1 }}>›</span>
                 ) : (
                   <X
                     size={14}
@@ -382,17 +391,17 @@ export default function CashbooksList() {
         {/* Controls */}
         <div style={S.controls}>
           <div style={S.searchBox}>
-            <Search size={15} color="var(--gray-400)" />
+            <Search size={14} color="#9CA3AF" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by book name..."
-              style={{ border: 'none', outline: 'none', flex: 1, fontSize: 13, background: 'transparent' }}
+              style={{ border: 'none', outline: 'none', flex: 1, fontSize: 13, background: 'transparent', color: '#374151' }}
             />
-            <span style={{ color: 'var(--gray-300)', fontSize: 12 }}>/</span>
+            <span style={{ color: '#D1D5DB', fontSize: 11, fontWeight: 500, background: '#F3F4F6', padding: '1px 6px', borderRadius: 4 }}>/</span>
           </div>
           <button style={S.sortBtn}>
-            <SortAsc size={14} />
+            <SortAsc size={14} color="#9CA3AF" />
             Sort By: Last Updated
           </button>
         </div>
@@ -407,7 +416,7 @@ export default function CashbooksList() {
             onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}`)}
           >
             <div style={S.bookIcon}>
-              <span style={{ fontSize: 18, color: 'var(--blue)' }}>📒</span>
+              <BookOpen size={20} color="#fff" strokeWidth={2} />
             </div>
             <div>
               <div style={S.bookName}>{book.name}</div>
@@ -417,44 +426,44 @@ export default function CashbooksList() {
               </div>
             </div>
             <div style={S.bookActions} onClick={(e) => e.stopPropagation()}>
-              <div style={S.badge}>{book.transactionCount}</div>
+              <div style={S.badge(book.transactionCount || 0)}>{book.transactionCount || 0}</div>
               {isPrimaryAdmin && (
                 <>
                   <div
-                    style={S.actionIcon(false)}
+                    style={S.actionIcon()}
                     title="Rename"
                     onClick={() => setRenameBook(book)}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.background = '#EFF6FF'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     <Pencil size={14} />
                   </div>
                   <div
-                    style={S.actionIcon(false)}
+                    style={S.actionIcon()}
                     title="Duplicate"
                     onClick={() => setDuplicateBook(book)}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.background = '#EFF6FF'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent'; }}
                   >
                     <Copy size={14} />
                   </div>
                 </>
               )}
               <div
-                style={S.actionIcon(false)}
+                style={S.actionIcon()}
                 title="Book Members"
                 onClick={() => navigate(`/businesses/${businessId}/cashbooks/${book.id}/settings`)}
-                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.background = '#EFF6FF'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent'; }}
               >
                 <UserPlus size={14} />
               </div>
               {isPrimaryAdmin && (
                 <div
-                  style={S.actionIcon(false)}
+                  style={S.actionIcon()}
                   title="Export"
-                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.background = 'var(--blue-light)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.background = 'transparent'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.background = '#EFF6FF'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent'; }}
                 >
                   <LogOut size={14} />
                 </div>
@@ -463,36 +472,38 @@ export default function CashbooksList() {
           </div>
         ))}
 
-        {/* Add New Book CTA — Primary Admin only */}
-        {isPrimaryAdmin && <div style={S.addCta} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
-          <div style={S.addCtaRow}>
-            <div style={{ ...S.bookIcon, background: '#E0E7FF' }}>
-              <span style={{ fontSize: 18 }}>📗</span>
+        {/* Add New Book CTA */}
+        {isPrimaryAdmin && (
+          <div style={S.addCta} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
+            <div style={S.addCtaRow}>
+              <div style={{ width: 44, height: 44, borderRadius: 9, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <BookOpen size={20} color="#7C3AED" strokeWidth={2} />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Add New Book</div>
+                <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 2 }}>Click to quickly add books for</div>
+              </div>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>Add New Book</div>
-              <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>Click to quickly add books for</div>
+              {QUICK_BOOKS.map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    ...S.quickTag,
+                    background: hoveredTag === tag ? '#EFF6FF' : '#fff',
+                    borderColor: hoveredTag === tag ? '#93C5FD' : '#E5E7EB',
+                    color: hoveredTag === tag ? '#2563EB' : '#6B7280',
+                  }}
+                  onMouseEnter={() => setHoveredTag(tag)}
+                  onMouseLeave={() => setHoveredTag(null)}
+                  onClick={(e) => { e.stopPropagation(); setPrefilledName(tag); setShowAdd(true); }}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
-          <div>
-            {QUICK_BOOKS.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  ...S.quickTag,
-                  background: hoveredTag === tag ? 'var(--blue-light)' : 'var(--white)',
-                  borderColor: hoveredTag === tag ? 'var(--blue)' : 'var(--gray-300)',
-                  color: hoveredTag === tag ? 'var(--blue)' : 'var(--gray-600)',
-                }}
-                onMouseEnter={() => setHoveredTag(tag)}
-                onMouseLeave={() => setHoveredTag(null)}
-                onClick={(e) => { e.stopPropagation(); setPrefilledName(tag); setShowAdd(true); }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>}
+        )}
       </div>
 
       {/* Right Sidebar */}
@@ -500,17 +511,15 @@ export default function CashbooksList() {
         {isPrimaryAdmin && (
           <button style={S.addBookBtn} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
             <Plus size={15} />
-            Add New Book
+            + Add New Book
           </button>
         )}
 
+        {/* Login via Email ID */}
         <div style={S.sideWidget}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, background: '#DCFCE7',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 16 }}>➕</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+            <div style={S.widgetIcon('#DCFCE7')}>
+              <Mail size={18} color="#16A34A" />
             </div>
             <div>
               <div style={S.widgetTitle}>Login via Email ID</div>
@@ -520,40 +529,32 @@ export default function CashbooksList() {
           <button style={S.widgetBtn}>Add Email</button>
         </div>
 
+        {/* Tried Passbook */}
         <div style={S.sideWidget}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, background: '#EFF6FF',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 16 }}>🏦</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+            <div style={S.widgetIcon('#EFF6FF')}>
+              <CreditCard size={18} color="#2563EB" />
             </div>
             <div>
               <div style={S.widgetTitle}>Tried Passbook?</div>
               <div style={S.widgetDesc}>Automatically get all online transactions at one place.</div>
             </div>
           </div>
-          <a style={{ color: 'var(--blue)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
-            Know More &gt;
-          </a>
+          <a style={S.widgetLink}>Know More &gt;</a>
         </div>
 
+        {/* Need help */}
         <div style={S.sideWidget}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, background: '#DCFCE7',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: 16 }}>💬</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+            <div style={S.widgetIcon('#DCFCE7')}>
+              <MessageCircle size={18} color="#16A34A" />
             </div>
             <div>
               <div style={S.widgetTitle}>Need help in business setup?</div>
               <div style={S.widgetDesc}>Our support team will help you</div>
             </div>
           </div>
-          <a style={{ color: 'var(--blue)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
-            Contact Us &gt;
-          </a>
+          <a style={S.widgetLink}>Contact Us &gt;</a>
         </div>
       </div>
 

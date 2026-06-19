@@ -24,30 +24,30 @@ const styles = {
   scroll: {
     overflowY: 'auto',
     flex: 1,
-    padding: '8px 0',
+    padding: '10px 0',
   },
   sectionHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '6px 12px',
-    fontSize: 12,
+    padding: '7px 14px',
+    fontSize: 13,
     fontWeight: 600,
     color: 'var(--gray-500)',
     textTransform: 'none',
     letterSpacing: 0,
     cursor: 'pointer',
     userSelect: 'none',
-    marginTop: 4,
+    marginTop: 6,
   },
   item: (active) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    padding: '7px 12px',
-    borderRadius: 6,
-    margin: '1px 6px',
-    fontSize: 13,
+    gap: 9,
+    padding: '9px 14px',
+    borderRadius: 7,
+    margin: '2px 8px',
+    fontSize: 14,
     fontWeight: active ? 600 : 400,
     color: active ? 'var(--white)' : 'var(--gray-700)',
     background: active ? 'var(--blue)' : 'transparent',
@@ -84,7 +84,7 @@ function NavItem({ icon: Icon, label, path, active, onClick }) {
         }
       }}
     >
-      <Icon size={15} />
+      <Icon size={17} />
       <span>{label}</span>
     </div>
   );
