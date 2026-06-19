@@ -187,7 +187,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [timer, setTimer] = useState(0);
-  const [devOtp, setDevOtp] = useState('');
   const otpRef = useRef(null);
 
   // Redirect if already logged in
@@ -224,8 +223,7 @@ export default function LoginPage() {
 
       setStep('otp');
       setTimer(30);
-      setDevOtp(data._demo_otp || '');
-      setToast(data._demo_otp ? 'OTP generated (dev mode)' : `OTP sent to ${email}`);
+      setToast(`OTP sent to ${email}`);
       setTimeout(() => otpRef.current?.focus(), 100);
     } catch (err) {
       setError(err.message);
@@ -400,39 +398,10 @@ export default function LoginPage() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>Enter OTP</span>
                 </div>
 
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: devOtp ? 10 : 16 }}>
+                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
                   Please enter the 6-digit OTP sent to{' '}
                   <strong style={{ color: '#111827' }}>{email}</strong>
                 </p>
-
-                {/* Dev mode OTP box */}
-                {devOtp && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 14px', marginBottom: 14,
-                    background: '#FFF7ED', border: '1.5px dashed #F97316',
-                    borderRadius: 8,
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#9A3412', fontWeight: 600, marginBottom: 2 }}>
-                        DEV MODE — Email not sent
-                      </div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#EA580C', letterSpacing: 4 }}>
-                        {devOtp}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => { setOtp(devOtp); setTimeout(() => otpRef.current?.focus(), 50); }}
-                      style={{
-                        padding: '6px 12px', borderRadius: 6,
-                        border: '1px solid #F97316', background: '#FFF',
-                        color: '#EA580C', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      }}
-                    >
-                      Use this
-                    </button>
-                  </div>
-                )}
 
                 {/* OTP single input */}
                 <input
