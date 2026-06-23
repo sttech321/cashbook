@@ -92,7 +92,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'https://cashbook-backend-eyji.onrender.com',
+        target: 'https://cashbook-backend-gres.onrender.com',
         changeOrigin: true,
         secure: true,
       },
