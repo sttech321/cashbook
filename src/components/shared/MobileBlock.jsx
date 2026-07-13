@@ -1,4 +1,21 @@
+import { Smartphone, Apple } from 'lucide-react';
+
+// App binaries served from cashbook/public/downloads/ (see that folder's README).
+const APK_URL = '/downloads/CashBook.apk';
+const IPA_URL = '/downloads/CashBook.ipa';
+
 export default function MobileBlock() {
+  // Offer the platform-appropriate build as the primary bottom-banner action.
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+  const isIOS = /iPad|iPhone|iPod/i.test(ua);
+  const primaryHref = isIOS ? IPA_URL : APK_URL;
+
+  const dlBtnBase = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    padding: '12px 14px', borderRadius: 10, fontWeight: 700, fontSize: 14,
+    textDecoration: 'none', flex: 1, whiteSpace: 'nowrap',
+  };
+
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 
@@ -72,6 +89,26 @@ export default function MobileBlock() {
             </div>
           ))}
         </div>
+
+        {/* Download buttons */}
+        <div style={{ width: '100%', maxWidth: 340, marginTop: 20, display: 'flex', gap: 10 }}>
+          <a
+            href={APK_URL}
+            download
+            style={{ ...dlBtnBase, background: '#2563EB', color: '#fff', border: '1.5px solid #2563EB' }}
+          >
+            <Smartphone size={16} />
+            Android (APK)
+          </a>
+          <a
+            href={IPA_URL}
+            download
+            style={{ ...dlBtnBase, background: '#fff', color: '#2563EB', border: '1.5px solid #2563EB' }}
+          >
+            <Apple size={16} />
+            iOS (IPA)
+          </a>
+        </div>
       </div>
 
       {/* Sticky bottom banner */}
@@ -88,18 +125,20 @@ export default function MobileBlock() {
         }}>
           Get our iOS/Android app for uninterrupted services. Thank you.
         </p>
-        <button
+        <a
+          href={primaryHref}
+          download
           style={{
             background: '#fff', color: '#1D4ED8',
             border: 'none', borderRadius: 8,
             padding: '9px 16px', fontWeight: 700,
             fontSize: 13, cursor: 'pointer', flexShrink: 0,
-            whiteSpace: 'nowrap', lineHeight: 1.3,
+            whiteSpace: 'nowrap', lineHeight: 1.3, textAlign: 'center',
+            textDecoration: 'none',
           }}
-          onClick={() => window.open('https://cashbook.in', '_blank')}
         >
           Download<br />App
-        </button>
+        </a>
       </div>
     </div>
   );
