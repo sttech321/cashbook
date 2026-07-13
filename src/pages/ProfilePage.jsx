@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Pencil, LogOut, ChevronDown, Check, Smartphone, Apple } from 'lucide-react';
+import { ArrowLeft, Pencil, LogOut, ChevronDown, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AppDownloadButtons from '../components/shared/AppDownloadButtons';
 
 /* ── Simple Toggle switch ─────────────────────────────── */
 function Toggle({ on, onChange }) {
@@ -164,39 +165,8 @@ function MobileAppBanner() {
             <span style={{ fontSize: 12, color: '#E0E7FF' }}>{f}</span>
           </div>
         ))}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <a
-            href="/downloads/CashBook.apk"
-            download
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 16px', borderRadius: 8,
-              background: 'white', color: '#3D52D5',
-              border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-              textDecoration: 'none', width: 'fit-content',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            <Smartphone size={14} />
-            Android (APK)
-          </a>
-          <a
-            href="/downloads/CashBook.ipa"
-            download
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 16px', borderRadius: 8,
-              background: 'rgba(255,255,255,0.12)', color: 'white',
-              border: '1.5px solid rgba(255,255,255,0.55)', cursor: 'pointer',
-              fontSize: 12, fontWeight: 700, textDecoration: 'none', width: 'fit-content',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.22)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
-          >
-            <Apple size={14} />
-            iOS (IPA)
-          </a>
+        <div style={{ marginTop: 14, maxWidth: 320 }}>
+          <AppDownloadButtons variant="onBlue" />
         </div>
       </div>
     </div>

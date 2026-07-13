@@ -1,19 +1,20 @@
-import { Smartphone, Apple } from 'lucide-react';
-
-// App binaries served from cashbook/public/downloads/ (see that folder's README).
-const APK_URL = '/downloads/CashBook.apk';
-const IPA_URL = '/downloads/CashBook.ipa';
+import { useState } from 'react';
+import AppDownloadButtons from './AppDownloadButtons';
+import { downloadApp } from '../../utils/appDownload';
 
 export default function MobileBlock() {
-  // Offer the platform-appropriate build as the primary bottom-banner action.
+  // The bottom banner offers a single "smart" download for the detected platform.
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
   const isIOS = /iPad|iPhone|iPod/i.test(ua);
-  const primaryHref = isIOS ? IPA_URL : APK_URL;
+  const [bannerNote, setBannerNote] = useState(null);
+  const [bannerBusy, setBannerBusy] = useState(false);
 
-  const dlBtnBase = {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    padding: '12px 14px', borderRadius: 10, fontWeight: 700, fontSize: 14,
-    textDecoration: 'none', flex: 1, whiteSpace: 'nowrap',
+  const handleBannerDownload = async () => {
+    setBannerNote(null);
+    setBannerBusy(true);
+    const res = await downloadApp(isIOS ? 'ios' : 'android');
+    setBannerBusy(false);
+    if (!res.ok) setBannerNote(res.reason);
   };
 
   return (
@@ -38,7 +39,7 @@ export default function MobileBlock() {
       <div style={{
         flex: 1, overflowY: 'auto',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', padding: '32px 24px 100px',
+        justifyContent: 'center', padding: '32px 24px 120px',
       }}>
 
         {/* App icon */}
@@ -91,23 +92,8 @@ export default function MobileBlock() {
         </div>
 
         {/* Download buttons */}
-        <div style={{ width: '100%', maxWidth: 340, marginTop: 20, display: 'flex', gap: 10 }}>
-          <a
-            href={APK_URL}
-            download
-            style={{ ...dlBtnBase, background: '#2563EB', color: '#fff', border: '1.5px solid #2563EB' }}
-          >
-            <Smartphone size={16} />
-            Android (APK)
-          </a>
-          <a
-            href={IPA_URL}
-            download
-            style={{ ...dlBtnBase, background: '#fff', color: '#2563EB', border: '1.5px solid #2563EB' }}
-          >
-            <Apple size={16} />
-            iOS (IPA)
-          </a>
+        <div style={{ width: '100%', maxWidth: 340, marginTop: 20 }}>
+          <AppDownloadButtons variant="onLight" />
         </div>
       </div>
 
@@ -116,29 +102,33 @@ export default function MobileBlock() {
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: '#1D4ED8',
         padding: '14px 18px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
         boxShadow: '0 -2px 12px rgba(0,0,0,0.15)',
       }}>
-        <p style={{
-          color: '#fff', fontSize: 13, lineHeight: 1.5,
-          flex: 1, margin: 0,
-        }}>
-          Get our iOS/Android app for uninterrupted services. Thank you.
-        </p>
-        <a
-          href={primaryHref}
-          download
-          style={{
-            background: '#fff', color: '#1D4ED8',
-            border: 'none', borderRadius: 8,
-            padding: '9px 16px', fontWeight: 700,
-            fontSize: 13, cursor: 'pointer', flexShrink: 0,
-            whiteSpace: 'nowrap', lineHeight: 1.3, textAlign: 'center',
-            textDecoration: 'none',
-          }}
-        >
-          Download<br />App
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
+          <p style={{ color: '#fff', fontSize: 13, lineHeight: 1.5, flex: 1, margin: 0 }}>
+            Get our iOS/Android app for uninterrupted services. Thank you.
+          </p>
+          <button
+            type="button"
+            onClick={handleBannerDownload}
+            disabled={bannerBusy}
+            style={{
+              background: '#fff', color: '#1D4ED8',
+              border: 'none', borderRadius: 8,
+              padding: '9px 16px', fontWeight: 700,
+              fontSize: 13, cursor: 'pointer', flexShrink: 0,
+              whiteSpace: 'nowrap', lineHeight: 1.3, textAlign: 'center',
+              opacity: bannerBusy ? 0.6 : 1,
+            }}
+          >
+            {bannerBusy ? 'Preparing…' : <>Download<br />App</>}
+          </button>
+        </div>
+        {bannerNote && (
+          <div style={{ marginTop: 8, fontSize: 12, color: '#FCA5A5', lineHeight: 1.4 }}>
+            {bannerNote}
+          </div>
+        )}
       </div>
     </div>
   );
