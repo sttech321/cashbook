@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppDownloadButtons from '../components/shared/AppDownloadButtons';
 
 const COMPANY_LOGOS = ['REGO', 'ROASTERY', 'rocket', 'RodBez', 'RUNGTA', 'SPACEZ', 'SS RAIL'];
 
@@ -250,6 +251,30 @@ export default function LandingPage() {
               ) : logo}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── Get the app ── */}
+      <section style={{ padding: '48px 40px 64px', background: 'white' }}>
+        <div style={{
+          maxWidth: 760, margin: '0 auto',
+          background: 'linear-gradient(135deg, #4F63E0 0%, #3D52D5 100%)',
+          borderRadius: 16, padding: '32px 28px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+          boxShadow: '0 12px 40px rgba(61,82,213,0.25)',
+        }}>
+          <div style={{ fontSize: 13, color: '#BAC4FF', marginBottom: 6, fontWeight: 600 }}>
+            Manage expenses on the go
+          </div>
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: 'white', margin: '0 0 8px' }}>
+            Get the CashBook Mobile App
+          </h2>
+          <p style={{ fontSize: 14, color: '#E0E7FF', margin: '0 0 22px', lineHeight: 1.6, maxWidth: 460 }}>
+            Offline support, book sharing and automatic data backup — download for Android or iOS.
+          </p>
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <AppDownloadButtons variant="onBlue" />
+          </div>
         </div>
       </section>
     </div>
