@@ -88,6 +88,15 @@ export function AppProvider({ children }) {
     return business.id;
   }, []);
 
+  const deleteBusiness = useCallback(async () => {
+    if (!currentBusinessId) return;
+    await api.businesses.delete(currentBusinessId);
+    setBusinesses((prev) => prev.filter((b) => b.id !== currentBusinessId));
+    // Set the new current business ID separately
+    const nextList = businesses.filter((b) => b.id !== currentBusinessId);
+    setCurrentBusinessId(nextList.length > 0 ? nextList[0].id : null);
+  }, [currentBusinessId, businesses]);
+
   // ── Cashbook CRUD ───────────────────────────────────────
   const addCashbook = useCallback(async (name) => {
     const { cashbook } = await api.cashbooks.create(currentBusinessId, { name });
@@ -134,6 +143,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       businesses,
       addBusiness,
+      deleteBusiness,
       currentBusiness,
       currentBusinessId,
       setCurrentBusinessId,

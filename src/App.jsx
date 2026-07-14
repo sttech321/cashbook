@@ -12,7 +12,7 @@ import WhatsNew from './components/shared/WhatsNew';
 import MobileBlock from './components/shared/MobileBlock';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import OnboardingPage from './pages/OnboardingPage';
+import AddFirstBusinessPage from './pages/AddFirstBusinessPage';
 import ProfilePage from './pages/ProfilePage';
 import { useWindowWidth } from './hooks/useWindowWidth';
 
@@ -57,19 +57,19 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/onboarding" replace /> : <LandingPage />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to="/add-first-business" replace /> : <LandingPage />} />
       <Route
         path="/login"
         element={isAuthenticated
-          ? <Navigate to="/onboarding" replace />
+          ? <Navigate to="/add-first-business" replace />
           : <LoginPage />}
       />
 
-      {/* Onboarding */}
-      <Route path="/onboarding" element={
+      {/* First Business Setup */}
+      <Route path="/add-first-business" element={
         <RequireAuth>
           <AppProvider>
-            <OnboardingPage />
+            <AddFirstBusinessPage />
           </AppProvider>
         </RequireAuth>
       } />

@@ -33,11 +33,11 @@ export default function LandingPage() {
             width: 30, height: 30, borderRadius: 7,
             background: '#2563EB', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontSize: 14, fontWeight: 800,
+            color: 'white', fontSize: 14, fontWeight: 600,
           }}>C</div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#111827', lineHeight: 1 }}>CASHBOOK</div>
-            <div style={{ fontSize: 8, color: '#7C3AED', fontWeight: 700, letterSpacing: 1 }}>OBOPAY ✦</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1 }}>CASHBOOK</div>
+            <div style={{ fontSize: 8, color: '#7C3AED', fontWeight: 500, letterSpacing: 1 }}>OBOPAY ✦</div>
           </div>
         </div>
 
@@ -95,14 +95,14 @@ export default function LandingPage() {
                 padding: '6px 14px', border: '1px solid #E5E7EB',
                 borderRadius: 20, fontSize: 12, color: '#374151',
               }}>
-                <span style={{ fontWeight: 800, color: '#F97316', fontSize: 11 }}>{prefix}▶</span>
+                <span style={{ fontWeight: 600, color: '#F97316', fontSize: 11 }}>{prefix}▶</span>
                 {suffix}
               </div>
             ))}
           </div>
 
           {/* Headline */}
-          <h1 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, marginBottom: 20, color: '#111827' }}>
+          <h1 style={{ fontSize: 52, fontWeight: 600, lineHeight: 1.15, marginBottom: 20, color: '#111827' }}>
             UPI Wallets for<br />
             <span style={{ color: '#2563EB' }}>Business Expenses</span>
           </h1>
@@ -172,8 +172,8 @@ export default function LandingPage() {
             }}>
               {/* App header */}
               <div style={{ padding: '10px 14px 6px', background: 'white', borderBottom: '1px solid #F3F4F6' }}>
-                <div style={{ fontSize: 8, fontWeight: 700, color: '#2563EB', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 14, height: 14, background: '#2563EB', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 8, fontWeight: 800 }}>C</div>
+                <div style={{ fontSize: 8, fontWeight: 500, color: '#2563EB', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 14, height: 14, background: '#2563EB', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 8, fontWeight: 600 }}>C</div>
                   CASHBOOK UPI
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function LandingPage() {
                   background: '#16A34A', borderRadius: 10, padding: '12px',
                   textAlign: 'center', color: 'white', marginBottom: 10,
                 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800 }}>₹550 ●</div>
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>₹550 ●</div>
                   <div style={{ fontSize: 8, opacity: 0.85, marginTop: 2 }}>Paid Successfully</div>
                   <div style={{ fontSize: 7, opacity: 0.7, marginTop: 1 }}>14-04-2025 at 11:23 AM</div>
                 </div>
@@ -215,7 +215,7 @@ export default function LandingPage() {
                   <div style={{ fontSize: 8, fontWeight: 600 }}>Travel</div>
                 </div>
                 {/* Done button */}
-                <button style={{ width: '100%', padding: '8px', background: '#2563EB', color: 'white', border: 'none', borderRadius: 8, fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
+                <button style={{ width: '100%', padding: '8px', background: '#2563EB', color: 'white', border: 'none', borderRadius: 8, fontSize: 9, fontWeight: 500, cursor: 'pointer' }}>
                   DONE
                 </button>
               </div>

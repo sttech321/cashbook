@@ -109,7 +109,7 @@ function RenameModal({ bookName, onRename, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 380, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>Rename Book</span>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Rename Book</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '20px' }}>
@@ -132,7 +132,7 @@ function DeleteBookModal({ bookName, onDelete, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 380, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>Delete Book</span>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Delete Book</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '20px' }}>
@@ -164,7 +164,7 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>Duplicate {book.name}</span>
+          <span style={{ fontSize: 16, fontWeight: 500 }}>Duplicate {book.name}</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '10px 20px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -222,7 +222,7 @@ function RemoveMemberModal({ member, bookName, onConfirm, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 460, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>Remove {member.name} from {bookName}?</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Remove {member.name} from {bookName}?</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-500)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '20px 24px' }}>
@@ -295,7 +295,7 @@ function ChangeRolePanel({ member, bookName, onUpdate, onClose }) {
             <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', padding: 2 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>Change {member.name}'s Role</span>
+            <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Change {member.name}'s Role</span>
           </div>
           <button onClick={onClose} style={{ display: 'flex', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}><X size={18} /></button>
         </div>
@@ -344,7 +344,7 @@ function ChangeRolePanel({ member, bookName, onUpdate, onClose }) {
           </div>
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--gray-100)' }}>
-          <button onClick={async () => { try { await onUpdate(member.id, role); } catch {} onClose(); }} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Update</button>
+          <button onClick={async () => { try { await onUpdate(member.id, role); } catch {} onClose(); }} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Update</button>
         </div>
       </div>
     </>
@@ -357,13 +357,13 @@ function SuccessModal({ memberName, role, bookName, totalCount, onAddMore, onClo
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 16, width: 440, padding: 32, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Added in {bookName}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Added in {bookName}</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           <Check size={32} color="white" />
         </div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 8 }}>{memberName} added as {role}!</div>
+        <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--gray-900)', marginBottom: 8 }}>{memberName} added as {role}!</div>
         <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 24 }}>Your new team count is {totalCount}. Add more members from your team</div>
         <button onClick={onAddMore} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
           <UserPlus size={16} /> Add more members
@@ -464,7 +464,7 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>Add New Member</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Add New Member</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-500)' }} onClick={onClose} />
         </div>
 
@@ -579,9 +579,9 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
 
             <div style={{ padding: '0 20px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, fontWeight: 700, color: 'var(--blue)' }}>{initials}</div>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blue-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, fontWeight: 500, color: 'var(--blue)' }}>{initials}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gray-900)' }}>{name || displayValue}</div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--gray-900)' }}>{name || displayValue}</div>
                   <div style={{ fontSize: 12, color: 'var(--gray-400)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inputMode === 'mobile' ? `+91${mobile}` : email}
                   </div>
@@ -592,7 +592,7 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
               </div>
 
               <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ padding: '14px 14px 8px', fontWeight: 700, fontSize: 14, borderBottom: '1px solid var(--gray-100)', color: 'var(--gray-900)' }}>Choose Role</div>
+                <div style={{ padding: '14px 14px 8px', fontWeight: 500, fontSize: 14, borderBottom: '1px solid var(--gray-100)', color: 'var(--gray-900)' }}>Choose Role</div>
                 <div style={{ display: 'flex', gap: 8, padding: '12px 14px', borderBottom: '1px solid var(--gray-100)', flexWrap: 'wrap' }}>
                   {['Data Operator', 'Viewer', 'Book Admin'].map((r) => (
                     <button key={r} onClick={() => setRole(r)} style={{
@@ -678,7 +678,7 @@ function AddMemberPanel({ businessName, bookName, bookMembers, businessTeam, onA
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 700 }} onClick={onClose} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 440, background: 'var(--white)', zIndex: 800, display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 30px rgba(0,0,0,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Add from {businessName}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Add from {businessName}</span>
           <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', padding: 2 }}><X size={18} /></button>
         </div>
         <div style={{ padding: '10px 20px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -727,7 +727,7 @@ function AddMemberPanel({ businessName, bookName, bookMembers, businessTeam, onA
                 onMouseEnter={e => { if (!alreadyInBook) e.currentTarget.style.background = 'var(--gray-50)'; }}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 {(() => { const ac = avatarColor(m.name); return (
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: ac.color, flexShrink: 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
                     {(m.name || '?')[0].toUpperCase()}
                   </div>
                 ); })()}
@@ -763,7 +763,7 @@ function AddPartyModal({ onAdd, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 360, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>Add Party</span>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Add Party</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '20px' }}>
@@ -784,7 +784,7 @@ function AddCategoryModal({ onAdd, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 360, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 15, fontWeight: 700 }}>Add Category</span>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Add Category</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
         </div>
         <div style={{ padding: '20px' }}>
@@ -935,7 +935,7 @@ export default function BookSettings() {
           <button onClick={backToBook} style={{ display: 'flex', alignItems: 'center', color: 'var(--gray-500)', cursor: 'pointer', border: 'none', background: 'none', padding: 4, borderRadius: 4 }}>
             <ArrowLeft size={18} />
           </button>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>Settings</span>
+          <span style={{ fontSize: 16, fontWeight: 500 }}>Settings</span>
           <span style={{ fontSize: 14, color: 'var(--gray-500)' }}>({book.name})</span>
         </div>
         {isPrimaryAdmin && (
@@ -990,7 +990,7 @@ export default function BookSettings() {
               {canManageBook && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Add Members</div>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)', marginBottom: 4 }}>Add Members</div>
                     <div style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.5 }}>
                       Manage your cashflow together with your business admins,<br />family or friends by adding them as members
                     </div>
@@ -1006,7 +1006,7 @@ export default function BookSettings() {
 
               {/* Member count + roles link */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>Total Members ({bookMembers.length})</span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Total Members ({bookMembers.length})</span>
                 <button style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--blue)', fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer' }}>
                   View roles & permissions <ChevronRight size={14} />
                 </button>
@@ -1021,7 +1021,7 @@ export default function BookSettings() {
                   return (
                     <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < bookMembers.length - 1 ? '1px solid var(--gray-100)' : 'none', position: 'relative' }}>
                       {(() => { const ac = avatarColor(m.name); return (
-                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: ac.color, flexShrink: 0 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
                           {m.name[0].toUpperCase()}
                         </div>
                       ); })()}
@@ -1072,7 +1072,7 @@ export default function BookSettings() {
           {activeTab === 'edit-role' && (
             <div style={{ maxWidth: 680 }}>
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 4 }}>Edit Data Operator Role</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)', marginBottom: 4 }}>Edit Data Operator Role</div>
                 <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Customize what Data Operators can do in this book</div>
               </div>
               <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
@@ -1109,7 +1109,7 @@ export default function BookSettings() {
                     marginBottom: -2,
                   }}>
                     {label}
-                    {k === 'category' && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>}
+                    {k === 'category' && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>}
                   </button>
                 ))}
               </div>
@@ -1127,7 +1127,7 @@ export default function BookSettings() {
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 10 }}>Add New Party</div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
-                        <Upload size={13} /> Import CSV <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 4px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
+                        <Upload size={13} /> Import CSV <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 4px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
                       </button>
                       <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
                         <BookOpen size={13} /> Import From Books
@@ -1170,7 +1170,7 @@ export default function BookSettings() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
-                        Required field <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
+                        Required field <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>Make Category mandatory for entries</div>
                     </div>

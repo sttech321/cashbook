@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Pencil, AlertTriangle, CheckCircle, ChevronDown, Check,
   Building2, MapPin, Users, LayoutGrid, Tag, Briefcase,
-  FileText, Hash, Mail, Phone,
+  FileText, Hash, Mail, Phone, Info
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -32,18 +33,19 @@ const REG_TYPES = [
 /* ─── Section Card ────────────────────────────────────────────────────────── */
 function SectionCard({ title, children }) {
   return (
-    <div style={{
-      border: '1px solid #E5E7EB', borderRadius: 10,
-      marginBottom: 16, background: '#fff', overflow: 'visible',
-    }}>
+    <div style={{ marginBottom: 24 }}>
       <div style={{
-        padding: '11px 16px', borderBottom: '1px solid #E5E7EB',
-        fontSize: 13, fontWeight: 700, color: '#374151',
-        background: '#FAFAFA', borderRadius: '10px 10px 0 0',
+        fontSize: 16, fontWeight: 500, color: '#111827',
+        marginBottom: 12, paddingLeft: 4
       }}>
         {title}
       </div>
-      {children}
+      <div style={{
+        border: '1px solid #E5E7EB', borderRadius: 10,
+        background: '#fff', overflow: 'visible',
+      }}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -59,72 +61,64 @@ function TextField({ icon: Icon, label, value, placeholder, onSave, type = 'text
   const cancel = () => { setVal(value || ''); setEditing(false); };
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '1px solid #F3F4F6' }}>
-      {editing ? (
-        <div style={{ padding: '12px 16px' }}>
-          <div style={{ fontSize: 11, marginBottom: 6, color: labelBlue ? '#2563EB' : '#9CA3AF', fontWeight: labelBlue ? 600 : 400 }}>
-            {label}
-          </div>
-          {multiline ? (
-            <textarea
-              autoFocus
-              value={val}
-              onChange={(e) => setVal(e.target.value)}
-              rows={3}
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '8px 10px',
-                borderRadius: 6, border: '1px solid #2563EB', fontSize: 13,
-                outline: 'none', resize: 'vertical', fontFamily: 'inherit',
-              }}
-            />
-          ) : (
-            <input
-              autoFocus
-              type={type}
-              value={val}
-              onChange={(e) => setVal(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); }}
-              style={{
-                width: '100%', boxSizing: 'border-box', padding: '8px 10px',
-                borderRadius: 6, border: '1px solid #2563EB', fontSize: 13, outline: 'none',
-              }}
-            />
-          )}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-            <button
-              onClick={cancel}
-              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={save}
-              style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div
-          onClick={() => setEditing(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', cursor: 'pointer' }}
-        >
-          <div style={{ color: '#6B7280', flexShrink: 0, display: 'flex' }}>
-            {Icon && <Icon size={16} />}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, marginBottom: 2, color: labelBlue ? '#2563EB' : '#9CA3AF', fontWeight: labelBlue ? 600 : 400 }}>
-              {label}
+    <div style={{ display: 'flex', gap: 16, padding: '16px 20px', borderBottom: isLast ? 'none' : '1px solid #F3F4F6' }}>
+      <div style={{ marginTop: 2 }}>
+        {Icon && <Icon size={20} color="#6B7280" />}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>{label}</div>
+
+        {editing ? (
+          <div>
+            {multiline ? (
+              <textarea
+                autoFocus
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                rows={3}
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                  borderRadius: 6, border: '1px solid #2563EB', fontSize: 14,
+                  outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+                  marginTop: 4,
+                }}
+              />
+            ) : (
+              <input
+                autoFocus
+                type={type}
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); }}
+                style={{
+                  width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                  borderRadius: 6, border: '1px solid #2563EB', fontSize: 14, outline: 'none',
+                  marginTop: 4,
+                }}
+              />
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, justifyContent: 'flex-end' }}>
+              <button onClick={cancel} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Cancel</button>
+              <button onClick={save} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Save</button>
             </div>
-            {value
-              ? <div style={{ fontSize: 13, color: '#111827', fontWeight: 500 }}>{value}</div>
-              : <div style={{ fontSize: 13, color: '#D1D5DB' }}>{placeholder}</div>
-            }
           </div>
-          <Pencil size={14} style={{ color: '#9CA3AF', flexShrink: 0 }} />
-        </div>
-      )}
+        ) : (
+          <div
+            onClick={() => setEditing(true)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', background: 'transparent',
+            }}
+          >
+            <div style={{ fontSize: 14, color: value ? '#111827' : '#9CA3AF', padding: '4px 0', flex: 1 }}>
+              {value || placeholder}
+            </div>
+            <div style={{ padding: 4, cursor: 'pointer' }}>
+              <Pencil size={18} color="#6B7280" />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -164,75 +158,67 @@ function DropdownField({ icon: Icon, label, value, placeholder, options, onChang
   const select = (opt) => { onChange(opt); setOpen(false); };
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '1px solid #F3F4F6' }}>
-      <div
-        ref={rowRef}
-        onClick={openDropdown}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '13px 16px',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          opacity: disabled ? 0.5 : 1,
-        }}
-      >
-        <div style={{ color: '#6B7280', flexShrink: 0, display: 'flex' }}>
-          {Icon && <Icon size={16} />}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, marginBottom: 2, color: labelBlue ? '#2563EB' : '#9CA3AF', fontWeight: labelBlue ? 600 : 400 }}>
-            {label}
-          </div>
-          {value
-            ? <div style={{ fontSize: 13, color: '#111827', fontWeight: 500 }}>{value}</div>
-            : <div style={{ fontSize: 13, color: '#D1D5DB' }}>{placeholder}</div>
-          }
-        </div>
-        <ChevronDown
-          size={16}
-          style={{
-            color: '#9CA3AF', flexShrink: 0,
-            transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform 150ms',
-          }}
-        />
+    <div style={{ display: 'flex', gap: 16, padding: '16px 20px', borderBottom: isLast ? 'none' : '1px solid #F3F4F6' }}>
+      <div style={{ marginTop: 2 }}>
+        {Icon && <Icon size={20} color="#6B7280" />}
       </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>{label}</div>
 
-      {open && (
         <div
-          ref={dropRef}
+          ref={rowRef}
+          onClick={openDropdown}
           style={{
-            ...dropStyle,
-            background: '#fff', border: '1px solid #E5E7EB',
-            borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-            maxHeight: 220, overflowY: 'auto',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: disabled ? 'not-allowed' : 'pointer', background: 'transparent',
+            opacity: disabled ? 0.5 : 1,
           }}
         >
-          {options.map((opt) => (
-            <div
-              key={opt}
-              onClick={() => select(opt)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '10px 14px', cursor: 'pointer', fontSize: 13,
-                color: value === opt ? '#2563EB' : '#374151',
-                fontWeight: value === opt ? 600 : 400,
-                background: value === opt ? '#EFF6FF' : 'transparent',
-              }}
-              onMouseEnter={(e) => { if (value !== opt) e.currentTarget.style.background = '#F9FAFB'; }}
-              onMouseLeave={(e) => { if (value !== opt) e.currentTarget.style.background = value === opt ? '#EFF6FF' : 'transparent'; }}
-            >
-              {opt}
-              {value === opt && <Check size={14} color="#2563EB" />}
-            </div>
-          ))}
+          <div style={{ fontSize: 14, color: value ? '#111827' : '#9CA3AF', padding: '4px 0', flex: 1 }}>
+            {value || placeholder}
+          </div>
+          <div style={{ padding: 4 }}>
+            <ChevronDown size={18} color="#6B7280" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }} />
+          </div>
         </div>
-      )}
+
+        {open && (
+          <div
+            ref={dropRef}
+            style={{
+              ...dropStyle,
+              background: '#fff', border: '1px solid #E5E7EB',
+              borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+              maxHeight: 220, overflowY: 'auto',
+            }}
+          >
+            {options.map((opt) => (
+              <div
+                key={opt}
+                onClick={() => select(opt)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', cursor: 'pointer', fontSize: 13,
+                  color: value === opt ? '#2563EB' : '#374151',
+                  fontWeight: value === opt ? 600 : 400,
+                  background: value === opt ? '#EFF6FF' : 'transparent',
+                }}
+                onMouseEnter={(e) => { if (value !== opt) e.currentTarget.style.background = '#F9FAFB'; }}
+                onMouseLeave={(e) => { if (value !== opt) e.currentTarget.style.background = value === opt ? '#EFF6FF' : 'transparent'; }}
+              >
+                {opt}
+                {value === opt && <Check size={14} color="#2563EB" />}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ─── Delete Business Modal ───────────────────────────────────────────────── */
-function DeleteBusinessModal({ businessName, onClose }) {
+function DeleteBusinessModal({ businessName, onClose, onDelete }) {
   const [typed, setTyped] = useState('');
   const confirmed = typed === businessName;
 
@@ -253,7 +239,7 @@ function DeleteBusinessModal({ businessName, onClose }) {
           }}>
             <AlertTriangle size={18} color="#DC2626" />
           </div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#DC2626' }}>Delete Business</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: '#DC2626' }}>Delete Business</span>
         </div>
         <p style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.6, marginBottom: 18 }}>
           This action is permanent and cannot be undone. All cashbooks, transactions, team members, and data will be permanently deleted.
@@ -280,7 +266,14 @@ function DeleteBusinessModal({ businessName, onClose }) {
             Cancel
           </button>
           <button
-            onClick={() => { alert('Business deleted!'); onClose(); }}
+            onClick={async () => {
+              try {
+                await onDelete();
+                alert('Business deleted!');
+              } catch (err) {
+                alert('Failed to delete business: ' + err.message);
+              }
+            }}
             disabled={!confirmed}
             style={{
               padding: '8px 18px', borderRadius: 6, fontSize: 13, fontWeight: 600, border: 'none',
@@ -325,7 +318,7 @@ function ChangeAdminModal({ teamMembers, onClose }) {
       }}>
         {step === 1 && (
           <>
-            <div style={{ marginBottom: 4, fontSize: 16, fontWeight: 700, color: '#111827' }}>
+            <div style={{ marginBottom: 4, fontSize: 16, fontWeight: 500, color: '#111827' }}>
               Change Primary Admin
             </div>
             <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
@@ -365,7 +358,7 @@ function ChangeAdminModal({ teamMembers, onClose }) {
                       <div style={{
                         width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                         background: '#EFF6FF', display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#2563EB',
+                        justifyContent: 'center', fontSize: 13, fontWeight: 500, color: '#2563EB',
                       }}>
                         {(m.name || '?').charAt(0).toUpperCase()}
                       </div>
@@ -408,13 +401,13 @@ function ChangeAdminModal({ teamMembers, onClose }) {
 
         {step === 2 && (
           <>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 16 }}>Are you sure?</div>
+            <div style={{ fontSize: 16, fontWeight: 500, color: '#111827', marginBottom: 16 }}>Are you sure?</div>
             <div style={{ background: '#EFF6FF', borderRadius: 8, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#2563EB' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 500, color: '#2563EB' }}>
                 {selected?.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#2563EB' }}>{selected?.name}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#2563EB' }}>{selected?.name}</div>
                 <div style={{ fontSize: 11, color: '#93C5FD' }}>{selected?.mobile || '—'}</div>
               </div>
             </div>
@@ -433,7 +426,7 @@ function ChangeAdminModal({ teamMembers, onClose }) {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <CheckCircle size={32} color="#16A34A" />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Transfer Initiated!</div>
+            <div style={{ fontSize: 17, fontWeight: 500, color: '#111827', marginBottom: 8 }}>Transfer Initiated!</div>
             <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, marginBottom: 24 }}>
               OTP has been sent to your registered mobile for verification.
             </p>
@@ -446,26 +439,35 @@ function ChangeAdminModal({ teamMembers, onClose }) {
 }
 
 /* ─── Nav Item ────────────────────────────────────────────────────────────── */
-function NavItem({ active, onClick, children }) {
+function NavItem({ active, onClick, title, subtitle }) {
   return (
     <div
       onClick={onClick}
       style={{
-        padding: '9px 16px', fontSize: 13, cursor: 'pointer',
-        fontWeight: active ? 600 : 400,
-        color: active ? '#2563EB' : '#374151',
-        background: active ? '#EFF6FF' : 'transparent',
-        borderLeft: active ? '3px solid #2563EB' : '3px solid transparent',
+        padding: '12px 16px', cursor: 'pointer',
+        margin: '4px 12px', borderRadius: 8,
+        background: active ? '#EEF2FF' : 'transparent',
       }}
     >
-      {children}
+      <div style={{
+        fontSize: 13, fontWeight: 600,
+        color: active ? '#312E81' : '#111827', marginBottom: 2
+      }}>
+        {title}
+      </div>
+      <div style={{
+        fontSize: 11, color: active ? '#4F46E5' : '#6B7280'
+      }}>
+        {subtitle}
+      </div>
     </div>
   );
 }
 
 /* ─── Main Component ──────────────────────────────────────────────────────── */
 export default function BusinessSettings() {
-  const { currentBusiness, currentProfile, profileStrength, filledFields, totalFields, updateProfile, teamMembers } = useApp();
+  const { currentBusiness, currentProfile, profileStrength, filledFields, totalFields, updateProfile, teamMembers, deleteBusiness } = useApp();
+  const navigate = useNavigate();
   const [activeNav, setActiveNav] = useState('profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -477,19 +479,18 @@ export default function BusinessSettings() {
     <div style={{ display: 'flex', minHeight: 'calc(100vh - var(--topbar-height))' }}>
       {/* Left nav */}
       <div style={{ width: 220, borderRight: '1px solid #E5E7EB', padding: '16px 0', background: '#FAFAFA', flexShrink: 0 }}>
-        <div style={{ padding: '10px 16px 4px', fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-          Business Profile
-        </div>
-        <NavItem active={activeNav === 'profile'} onClick={() => setActiveNav('profile')}>
-          Edit business details
-        </NavItem>
-        <div style={{ height: 1, background: '#E5E7EB', margin: '8px 0' }} />
-        <div style={{ padding: '10px 16px 4px', fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-          Settings
-        </div>
-        <NavItem active={activeNav === 'primary'} onClick={() => setActiveNav('primary')}>
-          Change Primary Admin or delete business
-        </NavItem>
+        <NavItem
+          active={activeNav === 'profile'}
+          onClick={() => setActiveNav('profile')}
+          title="Business Profile"
+          subtitle="Edit business details"
+        />
+        <NavItem
+          active={activeNav === 'primary'}
+          onClick={() => setActiveNav('primary')}
+          title="Settings"
+          subtitle="Change Primary Admin or delete business"
+        />
       </div>
 
       {/* Content */}
@@ -501,54 +502,57 @@ export default function BusinessSettings() {
             {/* Profile strength card */}
             <div style={{
               border: '1px solid #E5E7EB', borderRadius: 10,
-              padding: '16px 20px', marginBottom: 16,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '20px', marginBottom: 24,
               background: '#fff',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 8, background: '#EFF6FF',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0,
+                  width: 44, height: 44, borderRadius: 8, background: '#F3F4F6',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  {currentBusiness?.icon || '🏢'}
+                  {currentBusiness?.icon ? (
+                    <span>{currentBusiness.icon}</span>
+                  ) : (
+                    <Building2 size={20} color="#4B5563" />
+                  )}
                 </div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
+                  <div style={{ fontSize: 16, fontWeight: 500, color: '#111827', marginBottom: 2 }}>
                     {currentBusiness?.name || 'Business Name'}
                   </div>
                   {profileStrength < 100 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#D97706', marginBottom: 3 }}>
-                      <AlertTriangle size={11} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#DC2626' }}>
+                      <AlertTriangle size={12} />
                       Incomplete business profile
                     </div>
                   )}
-                  <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', gap: 4, alignItems: 'center' }}>
-                    Profile Strength:&nbsp;
-                    <strong style={{ color: strengthColor }}>
-                      {profileStrength < 50 ? 'Low' : profileStrength < 80 ? 'Medium' : 'High'}
-                    </strong>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 3, background: '#E5E7EB', overflow: 'hidden', width: 200, marginTop: 5 }}>
-                    <div style={{ height: '100%', width: `${profileStrength}%`, background: strengthColor, borderRadius: 3, transition: 'width 400ms' }} />
-                  </div>
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'right' }}>
-                <strong style={{ fontSize: 20, color: '#374151' }}>{profileStrength}%</strong>
-              </div>
-            </div>
 
-            {/* Incomplete hint */}
-            {totalFields - filledFields > 0 && (
-              <div style={{
-                background: '#EFF6FF', borderRadius: 6, padding: '8px 12px',
-                fontSize: 12, color: '#2563EB', display: 'flex', gap: 6, alignItems: 'center',
-                marginBottom: 16, border: '1px solid #BFDBFE',
-              }}>
-                <span>ℹ️</span>
-                <span>{totalFields - filledFields} out of {totalFields} fields are incomplete. Fill these to complete your profile</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
+                <span>Profile Strength: <span style={{ color: strengthColor }}>{profileStrength < 50 ? 'Low' : profileStrength < 80 ? 'Medium' : 'High'}</span></span>
+                <span style={{ color: strengthColor }}>{profileStrength}%</span>
               </div>
-            )}
+              <div style={{ height: 6, borderRadius: 3, background: '#F3F4F6', width: '100%', marginBottom: (totalFields - filledFields > 0) ? 20 : 0 }}>
+                <div style={{ width: `${profileStrength}%`, height: '100%', background: strengthColor, borderRadius: 3, transition: 'width 400ms' }} />
+              </div>
+
+              {/* Incomplete hint */}
+              {totalFields - filledFields > 0 && (
+                <div style={{
+                  background: '#EEF2FF', borderRadius: 6, padding: '12px 16px',
+                  fontSize: 12, color: '#312E81', display: 'flex', gap: 10, alignItems: 'center',
+                }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: '50%', background: '#6366F1',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <Info size={12} color="#fff" />
+                  </div>
+                  <span><strong>{totalFields - filledFields} out of {totalFields}</strong> fields are incomplete. Fill these to complete your profile</span>
+                </div>
+              )}
+            </div>
 
             {/* Basics */}
             <SectionCard title="Basics">
@@ -654,7 +658,7 @@ export default function BusinessSettings() {
         {/* ── Settings tab ── */}
         {activeNav === 'primary' && (
           <>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20, color: '#111827' }}>Settings</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 500, marginBottom: 20, color: '#111827' }}>Settings</h2>
             <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #F3F4F6' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: '#111827' }}>Change Primary Admin</div>
@@ -686,6 +690,10 @@ export default function BusinessSettings() {
               <DeleteBusinessModal
                 businessName={currentBusiness?.name}
                 onClose={() => setShowDeleteModal(false)}
+                onDelete={async () => {
+                  await deleteBusiness();
+                  navigate('/add-first-business');
+                }}
               />
             )}
             {showAdminModal && (

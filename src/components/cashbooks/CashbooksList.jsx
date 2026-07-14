@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Search, SortAsc, Plus, Pencil, Copy, UserPlus, LogOut,
-  X, Check, Users, Info, BookOpen, Mail, CreditCard, MessageCircle,
+  X, Check, Users, Info, BookOpen, Mail, CreditCard, MessageCircle, Smartphone, ChevronDown
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { useWindowWidth } from '../../hooks/useWindowWidth';
 
 const S = {
   page: { display: 'flex', minHeight: 'calc(100vh - var(--topbar-height))' },
   main: { flex: 1, padding: '22px 26px', minWidth: 0 },
-  pageTitle: { fontSize: 22, fontWeight: 700, color: '#111827' },
+  pageTitle: { fontSize: 22, fontWeight: 500, color: '#111827' },
   roleBanner: {
     display: 'flex', alignItems: 'center', gap: 8,
     padding: '9px 16px',
@@ -63,7 +64,7 @@ const S = {
     minWidth: 30, height: 24, borderRadius: 12,
     background: count > 0 ? '#DCFCE7' : '#F3F4F6',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 12, fontWeight: 700,
+    fontSize: 12, fontWeight: 500,
     color: count > 0 ? '#16A34A' : '#6B7280',
     padding: '0 8px', marginRight: 6,
   }),
@@ -133,11 +134,17 @@ function timeAgo(iso) {
   return `${Math.floor(hrs / 24)} days ago`;
 }
 
-function AddBookModal({ onClose, onAdd, initialName = '' }) {
+function AddBookModal({ onClose, onAdd, initialName = '', existingNames = [] }) {
   const [name, setName] = useState(initialName);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const save = async () => {
     if (!name.trim() || saving) return;
+    if (existingNames.includes(name.trim().toLowerCase())) {
+      setError('A book with this name already exists.');
+      return;
+    }
+    setError('');
     setSaving(true);
     try { await onAdd(name.trim()); onClose(); }
     catch (err) { alert('Failed to create book: ' + err.message); }
@@ -147,7 +154,7 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
     <div style={S.overlay} onClick={onClose}>
       <div style={{ ...S.modal, minWidth: 460 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Add New Book</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Add New Book</h3>
           <X size={18} style={{ cursor: 'pointer', color: '#9CA3AF' }} onClick={onClose} />
         </div>
         <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
@@ -156,15 +163,16 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
         <input
           autoFocus
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); setError(''); }}
           placeholder="Enter book name"
           onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 6,
-            border: '1.5px solid #2563EB', fontSize: 14,
-            outline: 'none', marginBottom: 28, boxSizing: 'border-box',
+            border: error ? '1.5px solid #EF4444' : '1.5px solid #2563EB', fontSize: 14,
+            outline: 'none', marginBottom: error ? 8 : 28, boxSizing: 'border-box',
           }}
         />
+        {error && <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 20 }}>{error}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             onClick={save}
@@ -172,7 +180,7 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
             style={{
               padding: '10px 32px', borderRadius: 6,
               background: name.trim() && !saving ? '#2563EB' : '#9CA3AF',
-              color: '#fff', fontSize: 14, fontWeight: 700,
+              color: '#fff', fontSize: 14, fontWeight: 500,
               cursor: name.trim() && !saving ? 'pointer' : 'not-allowed', border: 'none',
             }}
           >{saving ? 'Saving...' : 'Save'}</button>
@@ -182,8 +190,19 @@ function AddBookModal({ onClose, onAdd, initialName = '' }) {
   );
 }
 
-function RenameModal({ book, onClose, onRename }) {
+function RenameModal({ book, onClose, onRename, existingNames = [] }) {
   const [name, setName] = useState(book.name);
+  const [error, setError] = useState('');
+  const save = () => {
+    if (!name.trim()) return;
+    if (name.trim().toLowerCase() !== book.name.toLowerCase() && existingNames.includes(name.trim().toLowerCase())) {
+      setError('A book with this name already exists.');
+      return;
+    }
+    setError('');
+    onRename(book.id, name.trim());
+    onClose();
+  };
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={S.modal} onClick={(e) => e.stopPropagation()}>
@@ -194,21 +213,22 @@ function RenameModal({ book, onClose, onRename }) {
         <input
           autoFocus
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) { onRename(book.id, name.trim()); onClose(); } }}
+          onChange={(e) => { setName(e.target.value); setError(''); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); }}
           style={{
             width: '100%', padding: '9px 12px', borderRadius: 6,
-            border: '1px solid #D1D5DB', fontSize: 14,
-            outline: 'none', marginBottom: 16,
+            border: error ? '1px solid #EF4444' : '1px solid #D1D5DB', fontSize: 14,
+            outline: 'none', marginBottom: error ? 8 : 16,
           }}
         />
+        {error && <div style={{ color: '#EF4444', fontSize: 12, marginBottom: 16 }}>{error}</div>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{
             padding: '8px 16px', borderRadius: 6, border: '1px solid #D1D5DB',
             fontSize: 13, cursor: 'pointer', background: '#fff',
           }}>Cancel</button>
           <button
-            onClick={() => { if (name.trim()) { onRename(book.id, name.trim()); onClose(); } }}
+            onClick={save}
             style={{
               padding: '8px 16px', borderRadius: 6, background: '#2563EB',
               color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none',
@@ -220,8 +240,9 @@ function RenameModal({ book, onClose, onRename }) {
   );
 }
 
-function DuplicateBookModal({ book, onClose, onDuplicate }) {
+function DuplicateBookModal({ book, onClose, onDuplicate, existingNames = [] }) {
   const [name, setName] = useState('');
+  const [error, setError] = useState('');
   const [settings, setSettings] = useState({ members: true, categories: true, paymentModes: true, party: true, customFields: true });
   const [saving, setSaving] = useState(false);
   const items = [
@@ -231,11 +252,25 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
     { key: 'party', label: 'Party' },
     { key: 'customFields', label: 'Custom Fields' },
   ];
+  
+  const save = async () => {
+    if (!name.trim() || saving) return;
+    if (existingNames.includes(name.trim().toLowerCase())) {
+      setError('A book with this name already exists.');
+      return;
+    }
+    setError('');
+    setSaving(true);
+    try { await onDuplicate(name.trim()); onClose(); }
+    catch (err) { alert(err.message); }
+    finally { setSaving(false); }
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
       <div style={{ background: '#fff', borderRadius: 12, width: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F3F4F6' }}>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>Duplicate {book.name}</span>
+          <span style={{ fontSize: 16, fontWeight: 500 }}>Duplicate {book.name}</span>
           <X size={18} style={{ cursor: 'pointer', color: '#9CA3AF' }} onClick={onClose} />
         </div>
         <div style={{ padding: '10px 20px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -251,10 +286,11 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
               Enter new book name <span style={{ color: '#DC2626' }}>*</span>
             </label>
             <input
-              autoFocus value={name} onChange={(e) => setName(e.target.value)}
+              autoFocus value={name} onChange={(e) => { setName(e.target.value); setError(''); }}
               placeholder="Enter new book name"
-              style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #2563EB', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '9px 12px', border: error ? '1.5px solid #EF4444' : '1.5px solid #2563EB', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
             />
+            {error && <div style={{ color: '#EF4444', fontSize: 12, marginTop: 6 }}>{error}</div>}
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>
@@ -276,7 +312,7 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
           </button>
           <button
             disabled={!name.trim() || saving}
-            onClick={async () => { if (!name.trim() || saving) return; setSaving(true); try { await onDuplicate(name.trim()); onClose(); } catch (err) { alert(err.message); } finally { setSaving(false); } }}
+            onClick={save}
             style={{ padding: '9px 20px', borderRadius: 7, border: 'none', background: name.trim() ? '#2563EB' : '#E5E7EB', color: name.trim() ? '#fff' : '#9CA3AF', fontSize: 13, fontWeight: 600, cursor: name.trim() ? 'pointer' : 'not-allowed' }}
           >
             {saving ? 'Creating...' : 'Add New Book'}
@@ -289,24 +325,11 @@ function DuplicateBookModal({ book, onClose, onDuplicate }) {
 
 const QUICK_BOOKS = ['June Expenses', 'Staff Salary', 'Cash Journal', 'Purchase order Book'];
 
-const NOTIFICATIONS = [
-  {
-    id: 'book-admin-rename',
-    icon: '💡',
-    title: "Admin is now 'Book Admin'",
-    desc: "We've renamed the role to make bookkeeping permissions easier to understand.",
-  },
-  {
-    id: 'new-roles',
-    icon: null,
-    title: 'New Roles for Better Team Management',
-    desc: "We've updated our role names and introduced a dedicated Manager role to help your business scale",
-    hasArrow: true,
-  },
-];
+
 
 export default function CashbooksList() {
   const { cashbooks, addCashbook, renameCashbook, currentBusiness } = useApp();
+  const { user } = useAuth();
   const { businessId } = useParams();
   const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
   const navigate = useNavigate();
@@ -319,12 +342,35 @@ export default function CashbooksList() {
   const [renameBook, setRenameBook] = useState(null);
   const [duplicateBook, setDuplicateBook] = useState(null);
   const [hoveredTag, setHoveredTag] = useState(null);
-  const [dismissedNotifs, setDismissedNotifs] = useState([]);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [sortBy, setSortBy] = useState('Last Updated');
+  const [tempSortBy, setTempSortBy] = useState('Last Updated');
 
-  const filtered = cashbooks.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase())
-  );
-  const visibleNotifs = NOTIFICATIONS.filter((n) => !dismissedNotifs.includes(n.id));
+  const sortOptions = [
+    'Last Updated',
+    'Name (A to Z)',
+    'Net Balance (High to Low)',
+    'Net Balance (Low to High)',
+    'Last Created'
+  ];
+
+  const filtered = cashbooks
+    .filter((b) => b.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'Name (A to Z)':
+          return a.name.localeCompare(b.name);
+        case 'Net Balance (High to Low)':
+          return (b.netBalance || 0) - (a.netBalance || 0);
+        case 'Net Balance (Low to High)':
+          return (a.netBalance || 0) - (b.netBalance || 0);
+        case 'Last Created':
+          return new Date(b.createdAt || b.created_at || 0).getTime() - new Date(a.createdAt || a.created_at || 0).getTime();
+        case 'Last Updated':
+        default:
+          return new Date(b.updated_at || b.created_at || b.createdAt || 0).getTime() - new Date(a.updated_at || a.created_at || a.createdAt || 0).getTime();
+      }
+    });
 
   return (
     <div style={S.page}>
@@ -371,43 +417,12 @@ export default function CashbooksList() {
           <span style={{ color: '#2563EB', cursor: 'pointer', marginLeft: 4, fontSize: 13 }}>View</span>
         </div>
 
-        {/* Notification banners */}
-        {visibleNotifs.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: visibleNotifs.length > 1 ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 14 }}>
-            {visibleNotifs.map((notif) => (
-              <div key={notif.id} style={{
-                border: '1px solid #E5E7EB', borderRadius: 8,
-                padding: '12px 14px', background: '#fff',
-                display: 'flex', alignItems: 'flex-start', gap: 10,
-              }}>
-                {notif.icon && (
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>
-                    {notif.icon}
-                  </div>
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 2 }}>{notif.title}</div>
-                  <div style={{ fontSize: 12, color: '#6B7280' }}>{notif.desc}</div>
-                </div>
-                {notif.hasArrow ? (
-                  <span style={{ fontSize: 16, color: '#9CA3AF', flexShrink: 0, cursor: 'pointer', lineHeight: 1 }}>›</span>
-                ) : (
-                  <X
-                    size={14}
-                    style={{ cursor: 'pointer', color: '#9CA3AF', flexShrink: 0 }}
-                    onClick={() => setDismissedNotifs((prev) => [...prev, notif.id])}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Controls */}
         <div style={S.controls}>
           <div style={S.searchBox}>
-            <Search size={14} color="#9CA3AF" />
+            <Search size={15} color="#9CA3AF" />
             <input
+              type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by book name..."
@@ -415,10 +430,40 @@ export default function CashbooksList() {
             />
             <span style={{ color: '#D1D5DB', fontSize: 11, fontWeight: 500, background: '#F3F4F6', padding: '1px 6px', borderRadius: 4 }}>/</span>
           </div>
-          <button style={S.sortBtn}>
-            <SortAsc size={14} color="#9CA3AF" />
-            Sort By: Last Updated
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button style={S.sortBtn} onClick={() => { setShowSortMenu(!showSortMenu); setTempSortBy(sortBy); }}>
+              Sort By: {sortBy} <ChevronDown size={14} color="#6B7280" />
+            </button>
+            {showSortMenu && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: 4, width: 220,
+                background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10,
+                padding: '8px 0'
+              }}>
+                {sortOptions.map(opt => (
+                  <label key={opt} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 16px', cursor: 'pointer',
+                    fontSize: 13, color: '#374151',
+                  }}>
+                    <input 
+                      type="radio" 
+                      name="sort" 
+                      checked={tempSortBy === opt}
+                      onChange={() => setTempSortBy(opt)}
+                      style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                    />
+                    {opt}
+                  </label>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, padding: '10px 16px 4px', borderTop: '1px solid #F3F4F6', marginTop: 4 }}>
+                  <button onClick={() => { setTempSortBy('Last Updated'); setSortBy('Last Updated'); setShowSortMenu(false); }} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>Clear</button>
+                  <button onClick={() => { setSortBy(tempSortBy); setShowSortMenu(false); }} style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>Done</button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Book list */}
@@ -500,7 +545,7 @@ export default function CashbooksList() {
               </div>
             </div>
             <div>
-              {QUICK_BOOKS.map((tag) => (
+              {QUICK_BOOKS.filter(tag => !cashbooks.some(b => b.name.toLowerCase() === tag.toLowerCase())).map((tag) => (
                 <span
                   key={tag}
                   style={{
@@ -526,23 +571,31 @@ export default function CashbooksList() {
         {isPrimaryAdmin && (
           <button style={S.addBookBtn} onClick={() => { setPrefilledName(''); setShowAdd(true); }}>
             <Plus size={15} />
-            + Add New Book
+            Add New Book
           </button>
         )}
 
-        {/* Login via Email ID */}
-        <div style={S.sideWidget}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
-            <div style={S.widgetIcon('#DCFCE7')}>
-              <Mail size={18} color="#16A34A" />
+        {/* Missing Info Widget */}
+        {(!user?.email || !user?.mobile) && (
+          <div style={S.sideWidget}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+              <div style={S.widgetIcon('#DCFCE7')}>
+                {!user?.email ? <Mail size={18} color="#16A34A" /> : <Smartphone size={18} color="#16A34A" />}
+              </div>
+              <div>
+                <div style={S.widgetTitle}>
+                  {!user?.email ? 'Login via Email ID' : 'Login via Mobile Number'}
+                </div>
+                <div style={S.widgetDesc}>
+                  {!user?.email ? 'Verify email to login to desktop' : 'Verify mobile number to login to desktop'}
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={S.widgetTitle}>Login via Email ID</div>
-              <div style={S.widgetDesc}>Verify email to login to desktop</div>
-            </div>
+            <button style={S.widgetBtn} onClick={() => navigate('/profile')}>
+              {!user?.email ? 'Add Email' : 'Add Mobile'}
+            </button>
           </div>
-          <button style={S.widgetBtn}>Add Email</button>
-        </div>
+        )}
 
         {/* Tried Passbook */}
         <div style={S.sideWidget}>
@@ -578,6 +631,7 @@ export default function CashbooksList() {
           onClose={() => { setShowAdd(false); setPrefilledName(''); }}
           onAdd={addCashbook}
           initialName={prefilledName}
+          existingNames={cashbooks.map((b) => b.name.toLowerCase())}
         />
       )}
       {renameBook && (
@@ -585,6 +639,7 @@ export default function CashbooksList() {
           book={renameBook}
           onClose={() => setRenameBook(null)}
           onRename={renameCashbook}
+          existingNames={cashbooks.map((b) => b.name.toLowerCase())}
         />
       )}
       {duplicateBook && (
@@ -592,6 +647,7 @@ export default function CashbooksList() {
           book={duplicateBook}
           onClose={() => setDuplicateBook(null)}
           onDuplicate={addCashbook}
+          existingNames={cashbooks.map((b) => b.name.toLowerCase())}
         />
       )}
     </div>

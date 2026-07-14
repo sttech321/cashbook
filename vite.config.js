@@ -23,13 +23,25 @@ export default defineConfig({
         icons: [
           {
             src: '/icons/icon.svg',
-            sizes: 'any',
+            sizes: '192x192',
             type: 'image/svg+xml',
             purpose: 'any',
           },
           {
             src: '/icons/icon.svg',
-            sizes: 'any',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/icon.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'maskable',
+          },
+          {
+            src: '/icons/icon.svg',
+            sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'maskable',
           },

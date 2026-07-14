@@ -205,7 +205,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
             <>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 18px', flexShrink: 0 }}>
-                <span style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>Add New Member</span>
+                <span style={{ fontSize: 17, fontWeight: 500, color: '#111827' }}>Add New Member</span>
                 <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4 }}>×</button>
               </div>
 
@@ -279,7 +279,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                   <button onClick={() => setStep(1)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#374151', borderRadius: 4, padding: 0 }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+                  <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>
                     {isExistingUser ? 'Choose Role & Add' : 'Choose Role & Invite'}
                   </span>
                 </div>
@@ -299,7 +299,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
 
                 {/* User card */}
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: AVATAR_BG[colorIdx], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: AVATAR_TEXT[colorIdx], flexShrink: 0 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: AVATAR_BG[colorIdx], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 500, color: AVATAR_TEXT[colorIdx], flexShrink: 0 }}>
                     {initial}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -347,7 +347,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                   {/* Permissions */}
                   {perms.permissions.length > 0 && (
                     <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Permissions</div>
+                      <div style={{ fontSize: 11, fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>Permissions</div>
                       {perms.permissions.map(p => (
                         <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                           <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#22C55E"/><path d="M7 12l3.5 3.5L17 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -360,7 +360,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                   {/* Restrictions */}
                   {perms.restrictions.length > 0 && (
                     <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, margin: '12px 0 8px' }}>Restrictions</div>
+                      <div style={{ fontSize: 11, fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: 0.4, margin: '12px 0 8px' }}>Restrictions</div>
                       {perms.restrictions.map(r => (
                         <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
                           <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#EF4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
@@ -648,7 +648,7 @@ function ChangeRoleModal({ member, onUpdate, onClose }) {
         <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 18px', borderBottom: '1px solid #F3F4F6' }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Change Role</span>
+            <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Change Role</span>
             <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
           {/* Role list */}
@@ -696,7 +696,7 @@ function RemoveConfirmModal({ member, onRemove, onClose }) {
         <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid #F3F4F6' }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Remove {member.name}?</span>
+            <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Remove {member.name}?</span>
             <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
           {/* Body */}
@@ -769,7 +769,7 @@ function BookAdminConfirmModal({ memberName, bookName, onConfirm, onClose }) {
       <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1101, padding: 16 }}>
         <div style={{ width: '100%', maxWidth: 440, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '20px 24px 16px' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#111827', lineHeight: 1.4, flex: 1 }}>
+            <span style={{ fontSize: 15, fontWeight: 500, color: '#111827', lineHeight: 1.4, flex: 1 }}>
               Change {memberName}'s role to Book Admin in {bookName}?
             </span>
             <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 8 }}>×</button>
@@ -845,7 +845,7 @@ function BookChangeRolePanel({ memberName, bookId, bookName, currentRole, busine
         {/* Header */}
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #F3F4F6', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Change {memberName}'s Role</span>
+            <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Change {memberName}'s Role</span>
             <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
           <div style={{ fontSize: 12, color: '#9CA3AF' }}>Book: <strong style={{ color: '#374151', fontWeight: 600 }}>{bookName}</strong></div>
@@ -868,7 +868,7 @@ function BookChangeRolePanel({ memberName, bookId, bookName, currentRole, busine
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
           {roleData.permissions.length > 0 && (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 }}>Permissions</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 }}>Permissions</div>
               {roleData.permissions.map(p => (
                 <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#22C55E"/><path d="M7 12l3.5 3.5L17 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -879,7 +879,7 @@ function BookChangeRolePanel({ memberName, bookId, bookName, currentRole, busine
           )}
           {roleData.restrictions.length > 0 && (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 10, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.4 }}>Restrictions</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 10, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.4 }}>Restrictions</div>
               {roleData.restrictions.map(r => (
                 <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="12" fill="#EF4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
@@ -1018,7 +1018,7 @@ function AddToBooksDrawer({ member, currentBusinessId, memberBooks, onBooksAdded
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid #F3F4F6', flexShrink: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>
+          <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>
             Add {member.name} to Books
           </span>
           <button onClick={onClose} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 22, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
@@ -1271,11 +1271,11 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
         {/* Top row: avatar + name + role badge */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: textColor, flexShrink: 0 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 500, color: textColor, flexShrink: 0 }}>
               {initials}
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{member.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#111827' }}>{member.name}</div>
               <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Member since {memberSince}</div>
             </div>
           </div>
@@ -1436,7 +1436,7 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
               ) : (
                 directReports.map(m => (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#5B21B6', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: '#5B21B6', flexShrink: 0 }}>
                       {(m.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <span style={{ fontSize: 13, color: '#111827', flex: 1 }}>{m.name}</span>
@@ -1613,7 +1613,7 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
           <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 700, padding: 16 }}>
             <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: '1px solid #F3F4F6' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Remove from Book?</span>
+                <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Remove from Book?</span>
                 <button onClick={() => setBookRemoveConfirm(null)} style={{ width: 28, height: 28, border: 'none', background: 'none', cursor: 'pointer', color: '#6B7280', fontSize: 20, lineHeight: 1, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
               <div style={{ padding: '16px 24px 20px' }}>
@@ -1772,7 +1772,7 @@ export default function TeamPage() {
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 1200 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 20, color: '#111827' }}>Team</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 20, color: '#111827' }}>Team</h1>
 
       {/* Top 3 cards */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
@@ -1789,7 +1789,7 @@ export default function TeamPage() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{title}</span>
-                {badge && <span style={{ padding: '2px 7px', borderRadius: 4, background: '#16A34A', color: 'white', fontSize: 10, fontWeight: 700 }}>{badge}</span>}
+                {badge && <span style={{ padding: '2px 7px', borderRadius: 4, background: '#16A34A', color: 'white', fontSize: 10, fontWeight: 500 }}>{badge}</span>}
               </div>
               <div style={{ fontSize: 12, color: 'var(--gray-500)', lineHeight: 1.5 }}>{desc}</div>
             </div>

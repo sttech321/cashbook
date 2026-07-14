@@ -10,7 +10,7 @@ export default function WhatsNew() {
   return (
     <div style={{ padding: 24, maxWidth: 860 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>What's New</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>What's New</h1>
         <p style={{ fontSize: 13, color: 'var(--gray-500)' }}>
           Feature updates in CashBook. We ship fast, so you can improve your spend management process faster!
         </p>
@@ -23,7 +23,7 @@ export default function WhatsNew() {
             <span style={{ fontSize: 12, color: 'var(--gray-400)', minWidth: 80 }}>{release.date}</span>
             <span style={{
               padding: '3px 10px', borderRadius: 20, background: 'var(--gray-100)',
-              fontSize: 11, fontWeight: 700, color: 'var(--gray-600)',
+              fontSize: 11, fontWeight: 500, color: 'var(--gray-600)',
             }}>{release.version}</span>
           </div>
 
@@ -72,7 +72,7 @@ function CategoryBadge({ label }) {
   return (
     <span style={{
       display: 'inline-flex', padding: '3px 10px', borderRadius: 4,
-      background: c.bg, color: c.color, fontSize: 11, fontWeight: 700,
+      background: c.bg, color: c.color, fontSize: 11, fontWeight: 500,
       marginBottom: 12, marginLeft: 92,
     }}>
       {label}
@@ -88,7 +88,7 @@ function ReleaseItem({ item }) {
     }}>
       <div style={{ minWidth: 80 }} />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--gray-900)' }}>
+        <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 6, color: 'var(--gray-900)' }}>
           {item.title}
         </div>
         {item.description && (

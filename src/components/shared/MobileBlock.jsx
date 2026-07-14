@@ -12,9 +12,9 @@ export default function MobileBlock() {
         <div style={{
           width: 28, height: 28, background: '#2563EB', borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 800, fontSize: 15,
+          color: '#fff', fontWeight: 600, fontSize: 15,
         }}>C</div>
-        <span style={{ fontWeight: 700, fontSize: 16, color: '#111827' }}>CashBook</span>
+        <span style={{ fontWeight: 500, fontSize: 16, color: '#111827' }}>CashBook</span>
       </div>
 
       {/* Main content */}
@@ -29,7 +29,7 @@ export default function MobileBlock() {
           <div style={{
             width: 84, height: 84, background: '#2563EB', borderRadius: 20,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 46, fontWeight: 900, letterSpacing: -2,
+            color: '#fff', fontSize: 46, fontWeight: 600, letterSpacing: -2,
             boxShadow: '0 8px 24px rgba(37,99,235,0.3)',
           }}>C</div>
           {/* notification dot */}
@@ -42,7 +42,7 @@ export default function MobileBlock() {
 
         {/* App name */}
         <div style={{
-          fontSize: 26, fontWeight: 800, color: '#2563EB',
+          fontSize: 26, fontWeight: 600, color: '#2563EB',
           marginBottom: 32, letterSpacing: '-0.3px',
         }}>
           CashBook
@@ -92,7 +92,7 @@ export default function MobileBlock() {
           style={{
             background: '#fff', color: '#1D4ED8',
             border: 'none', borderRadius: 8,
-            padding: '9px 16px', fontWeight: 700,
+            padding: '9px 16px', fontWeight: 500,
             fontSize: 13, cursor: 'pointer', flexShrink: 0,
             whiteSpace: 'nowrap', lineHeight: 1.3,
           }}

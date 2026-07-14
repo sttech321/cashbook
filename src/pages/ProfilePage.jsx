@@ -24,33 +24,28 @@ function Toggle({ on, onChange }) {
 }
 
 /* ── Inline editable field ────────────────────────────── */
-function EditableField({ label, value, onSave, placeholder = '', type = 'text' }) {
+function EditableField({ label, value, onChange, placeholder = '', type = 'text' }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft]     = useState(value || '');
   const inputRef = useRef(null);
 
-  useEffect(() => { setDraft(value || ''); }, [value]);
   useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
-
-  const save = () => {
-    const trimmed = draft.trim();
-    if (trimmed !== (value || '')) onSave(trimmed);
-    setEditing(false);
-  };
 
   return (
     <div style={{ padding: '16px 0', borderBottom: '1px solid #F3F4F6' }}>
       <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6, fontWeight: 500 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div 
+        onClick={() => !editing && setEditing(true)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: editing ? 'default' : 'text' }}
+      >
         {editing ? (
           <>
             <input
               ref={inputRef}
               type={type}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
-              onBlur={save}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setEditing(false); }}
+              onBlur={() => setEditing(false)}
               placeholder={placeholder}
               style={{
                 flex: 1, fontSize: 14, padding: '6px 0',
@@ -58,7 +53,7 @@ function EditableField({ label, value, onSave, placeholder = '', type = 'text' }
                 outline: 'none', background: 'transparent', color: '#111827',
               }}
             />
-            <div onClick={save} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
+            <div onClick={() => setEditing(false)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
               <Check size={15} color="#2563EB" />
             </div>
           </>
@@ -100,15 +95,15 @@ function PhoneMockup() {
       <div style={{ width: 40, height: 5, background: '#374151', borderRadius: 4, margin: '0 auto 8px' }} />
       {/* App content */}
       <div style={{ background: 'white', borderRadius: 10, overflow: 'hidden', padding: '10px 8px' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: '#111827', marginBottom: 8 }}>Business Expenses</div>
+        <div style={{ fontSize: 9, fontWeight: 500, color: '#111827', marginBottom: 8 }}>Business Expenses</div>
         <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
           {[['Cash In', '+', '#22C55E', '30000'], ['Cash Out', '-', '#EF4444', '2000']].map(([lbl, icon, clr, val]) => (
             <div key={lbl} style={{ flex: 1, background: '#F9FAFB', borderRadius: 4, padding: '4px 5px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: clr, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: 'white', fontWeight: 700 }}>{icon}</div>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: clr, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: 'white', fontWeight: 500 }}>{icon}</div>
                 <span style={{ fontSize: 7, color: '#6B7280' }}>{lbl}</span>
               </div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#111827' }}>{val}</div>
+              <div style={{ fontSize: 9, fontWeight: 500, color: '#111827' }}>{val}</div>
             </div>
           ))}
         </div>
@@ -119,7 +114,7 @@ function PhoneMockup() {
               <div style={{ fontSize: 8, fontWeight: 600, color: '#374151' }}>{r.label}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 8, fontWeight: 700, color: r.color }}>{r.amount}</div>
+              <div style={{ fontSize: 8, fontWeight: 500, color: r.color }}>{r.amount}</div>
               {r.balance && <div style={{ fontSize: 7, color: '#9CA3AF' }}>{r.balance}</div>}
             </div>
           </div>
@@ -152,7 +147,7 @@ function MobileAppBanner() {
       {/* Right — info */}
       <div style={{ flex: 1, padding: '24px 24px 24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div style={{ fontSize: 12, color: '#BAC4FF', marginBottom: 4 }}>Checkout the</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: 'white', marginBottom: 12 }}>Mobile App</div>
+        <div style={{ fontSize: 20, fontWeight: 600, color: 'white', marginBottom: 12 }}>Mobile App</div>
         {['Offline Support', 'Book Sharing', 'Data Backup'].map((f) => (
           <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
             <div style={{
@@ -168,7 +163,7 @@ function MobileAppBanner() {
           marginTop: 14, display: 'flex', alignItems: 'center', gap: 8,
           padding: '8px 16px', borderRadius: 8,
           background: 'white', color: '#3D52D5',
-          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
           width: 'fit-content',
         }}>
           <Download size={13} />
@@ -203,8 +198,8 @@ function ProfileHeader() {
       padding: '0 20px', zIndex: 100,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => navigate(-1)}>
-        <div style={{ width: 26, height: 26, borderRadius: 5, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 800 }}>C</div>
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#1E3A8A' }}>CASHBOOK</span>
+        <div style={{ width: 26, height: 26, borderRadius: 5, background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 600 }}>C</div>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#1E3A8A' }}>CASHBOOK</span>
       </div>
 
       <div ref={ref} style={{ position: 'relative' }}>
@@ -212,7 +207,7 @@ function ProfileHeader() {
           onClick={() => setShowDrop((v) => !v)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '4px 8px', borderRadius: 6, border: '1px solid #E5E7EB' }}
         >
-          <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#2563EB', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{initials}</div>
+          <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#2563EB', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 500 }}>{initials}</div>
           <span style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</span>
           <ChevronDown size={13} />
         </div>
@@ -224,7 +219,7 @@ function ProfileHeader() {
             boxShadow: '0 4px 20px rgba(0,0,0,0.12)', minWidth: 220, zIndex: 200, overflow: 'hidden',
           }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6', display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563EB', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>{initials}</div>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2563EB', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 500 }}>{initials}</div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{displayName}</div>
                 <div style={{ color: '#6B7280', fontSize: 12 }}>{user?.mobile || user?.email}</div>
@@ -251,39 +246,91 @@ function ProfileHeader() {
     </header>
   );
 }
-
 /* ── Main Profile Page ────────────────────────────────── */
 export default function ProfilePage() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(false);
 
-  const displayName = user?.name || user?.email?.split('@')[0] || '';
+  const [notifications, setNotifications] = useState(true);
   const [profileError, setProfileError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const patchProfile = async (fields) => {
-    setProfileError(null);
-    try {
-      const res  = await fetch('/api/auth/me', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fields),
+  // Draft state for edits
+  const [draftProfile, setDraftProfile] = useState({ name: '', mobile: '', email: '' });
+  
+  // OTP Modal State
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpMobile, setOtpMobile] = useState('');
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpError, setOtpError] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setDraftProfile({
+        name: user.name || '',
+        mobile: user.mobile || '',
+        email: user.email || ''
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setProfileError(data.error || 'Failed to update profile');
-        return;
-      }
-      // Use full user object from server response
-      if (data.user) updateUser(data.user);
-      else updateUser(fields);
-    } catch {
-      setProfileError('Network error. Please try again.');
+    }
+  }, [user]);
+
+  const hasChanges = draftProfile.name !== (user?.name || '') || 
+                     draftProfile.mobile !== (user?.mobile || '') || 
+                     draftProfile.email !== (user?.email || '');
+
+  const handleSaveChangesClick = async () => {
+    setProfileError(null);
+    setOtpError('');
+    const mobileChanged = draftProfile.mobile !== (user?.mobile || '');
+    const emailChanged = draftProfile.email !== (user?.email || '');
+    
+    if (mobileChanged || emailChanged) {
+       setIsSaving(true);
+       try {
+         if (mobileChanged) await fetch('/api/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mobile: draftProfile.mobile }) });
+         if (emailChanged) await fetch('/api/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: draftProfile.email }) });
+         setShowOtpModal(true);
+       } catch (err) {
+         setProfileError('Failed to send OTPs. Please try again.');
+       }
+       setIsSaving(false);
+    } else {
+       saveProfileToBackend();
     }
   };
 
-  const initials = (user?.name || 'U').charAt(0).toUpperCase();
+  const saveProfileToBackend = async () => {
+    setIsSaving(true);
+    setProfileError(null);
+    setOtpError('');
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: draftProfile.name,
+          mobile: draftProfile.mobile,
+          email: draftProfile.email,
+          otpMobile: otpMobile || undefined,
+          otpEmail: otpEmail || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update profile');
+      
+      updateUser(data.user);
+      setShowOtpModal(false);
+      setOtpMobile('');
+      setOtpEmail('');
+    } catch (err) {
+      if (showOtpModal) {
+        setOtpError(err.message);
+      } else {
+        setProfileError(err.message);
+      }
+    }
+    setIsSaving(false);
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#F3F4F6' }}>
@@ -302,7 +349,7 @@ export default function ProfilePage() {
               >
                 <ArrowLeft size={18} />
               </button>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>Your Profile Details</span>
+              <span style={{ fontSize: 16, fontWeight: 500, color: '#111827' }}>Your Profile Details</span>
             </div>
 
             {/* Error banner */}
@@ -323,36 +370,25 @@ export default function ProfilePage() {
             {/* Name */}
             <EditableField
               label="Name"
-              value={displayName}
+              value={draftProfile.name}
               placeholder="Enter your name"
-              onSave={(name) => patchProfile({ name })}
+              onChange={(name) => setDraftProfile(p => ({...p, name}))}
             />
 
             {/* Mobile */}
             <EditableField
               label="Mobile Number"
-              value={user?.mobile || ''}
+              value={draftProfile.mobile}
               placeholder="Enter mobile number"
               type="tel"
-              onSave={(mobile) => patchProfile({ mobile })}
+              onChange={(mobile) => setDraftProfile(p => ({...p, mobile}))}
             />
 
             {/* Email */}
             <div style={{ padding: '16px 0', borderBottom: '1px solid #F3F4F6' }}>
               <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6, fontWeight: 500 }}>Email</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <EmailField value={user?.email || ''} onSave={(email) => patchProfile({ email })} />
-                <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>OR</span>
-                <button style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '7px 12px', borderRadius: 7,
-                  border: '1.5px solid #E5E7EB', background: 'white',
-                  cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#374151',
-                  flexShrink: 0, whiteSpace: 'nowrap',
-                }}>
-                  <GoogleIcon />
-                  Continue With Google
-                </button>
+                <EmailField value={draftProfile.email} onChange={(email) => setDraftProfile(p => ({...p, email}))} />
               </div>
             </div>
 
@@ -367,50 +403,124 @@ export default function ProfilePage() {
 
             {/* Logout */}
             <div
-              style={{ padding: '14px 0', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              style={{ padding: '14px 0', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
               onClick={() => { logout(); navigate('/login'); }}
             >
-              <LogOut size={16} color="#EF4444" />
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#EF4444' }}>Logout</span>
+              <LogOut size={16} color="#DC2626" />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#DC2626' }}>Logout</span>
             </div>
-
-            {/* Version */}
-            <div style={{ paddingTop: 12, fontSize: 12, color: '#9CA3AF' }}>v4.6.0</div>
+            
+            {hasChanges && (
+              <div style={{ marginTop: 20 }}>
+                <button
+                  onClick={handleSaveChangesClick}
+                  disabled={isSaving}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: 8,
+                    background: '#2563EB', color: 'white', fontWeight: 600,
+                    border: 'none', cursor: 'pointer', opacity: isSaving ? 0.7 : 1
+                  }}
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile App banner */}
-          <MobileAppBanner />
         </div>
       </div>
+
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{ background: 'white', padding: 24, borderRadius: 12, width: '90%', maxWidth: 400 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 18, color: '#111827' }}>Verify Changes</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#6B7280' }}>
+              Please enter the OTP sent to your new contact details to verify the changes.
+            </p>
+
+            {otpError && (
+              <div style={{ color: '#DC2626', fontSize: 13, marginBottom: 16 }}>{otpError}</div>
+            )}
+
+            {draftProfile.mobile !== (user?.mobile || '') && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#374151', marginBottom: 6 }}>Mobile OTP</label>
+                <input
+                  type="text"
+                  value={otpMobile}
+                  onChange={e => setOtpMobile(e.target.value)}
+                  placeholder="Enter SMS OTP"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E5E7EB', fontSize: 14 }}
+                />
+              </div>
+            )}
+
+            {draftProfile.email !== (user?.email || '') && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#374151', marginBottom: 6 }}>Email OTP</label>
+                <input
+                  type="text"
+                  value={otpEmail}
+                  onChange={e => setOtpEmail(e.target.value)}
+                  placeholder="Enter Email OTP"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #E5E7EB', fontSize: 14 }}
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setShowOtpModal(false)}
+                style={{ flex: 1, padding: 12, borderRadius: 8, border: '1.5px solid #E5E7EB', background: 'white', color: '#374151', cursor: 'pointer', fontWeight: 500 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveProfileToBackend}
+                disabled={isSaving}
+                style={{ flex: 1, padding: 12, borderRadius: 8, border: 'none', background: '#2563EB', color: 'white', cursor: 'pointer', fontWeight: 500 }}
+              >
+                {isSaving ? 'Verifying...' : 'Verify & Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Email field with pencil ──────────────────────────── */
-function EmailField({ value, onSave }) {
+function EmailField({ value, onChange }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft]     = useState(value || '');
   const inputRef = useRef(null);
 
-  useEffect(() => { setDraft(value || ''); }, [value]);
   useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
 
-  const save = () => { if (draft.trim() !== value) onSave(draft.trim()); setEditing(false); };
-
   return (
-    <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', gap: 8,
-      border: `1.5px solid ${editing ? '#2563EB' : '#E5E7EB'}`,
-      borderRadius: 7, padding: '7px 10px', transition: 'border-color 150ms',
-    }}>
+    <div 
+      onClick={() => !editing && setEditing(true)}
+      style={{
+        flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+        border: `1.5px solid ${editing ? '#2563EB' : '#E5E7EB'}`,
+        borderRadius: 7, padding: '7px 10px', transition: 'border-color 150ms',
+        cursor: editing ? 'default' : 'text'
+      }}
+    >
       {editing ? (
         <input
           ref={inputRef}
           type="email"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
-          onBlur={save}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setEditing(false); }}
+          onBlur={() => setEditing(false)}
           placeholder="Enter your email"
           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, color: '#111827', background: 'transparent' }}
         />
@@ -420,8 +530,7 @@ function EmailField({ value, onSave }) {
         </span>
       )}
       <div
-        onClick={() => setEditing(v => !v)}
-        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+        style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}
       >
         <Pencil size={13} color={editing ? '#2563EB' : '#6B7280'} />
       </div>

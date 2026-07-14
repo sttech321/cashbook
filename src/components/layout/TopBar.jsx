@@ -24,7 +24,7 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    fontWeight: 700,
+    fontWeight: 500,
     fontSize: 16,
     color: 'var(--blue)',
     minWidth: 140,
@@ -40,7 +40,7 @@ const S = {
     justifyContent: 'center',
     color: 'white',
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 500,
   },
   center: {
     flex: 1,

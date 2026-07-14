@@ -468,7 +468,7 @@ function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select
             {/* Suggestions section */}
             {filteredSugg.length > 0 && (
               <>
-                <div style={{ padding: '6px 12px 2px', fontSize: 11, fontWeight: 700, color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Suggestions</div>
+                <div style={{ padding: '6px 12px 2px', fontSize: 11, fontWeight: 500, color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Suggestions</div>
                 {filteredSugg.map((opt) => (
                   <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', cursor: 'pointer' }}
                     onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
@@ -567,7 +567,7 @@ function AddPartyModal({ onSave, onClose }) {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Add New Party</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Add New Party</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-500)' }} onClick={onClose} />
         </div>
 
@@ -582,8 +582,8 @@ function AddPartyModal({ onSave, onClose }) {
             <path d="M5 12h14M12 5v14" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#16A34A', flex: 1 }}>Import all parties in bulk via CSV</span>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4, background: '#16A34A', color: 'white' }}>New</span>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#16A34A', letterSpacing: -2 }}>&raquo;</span>
+          <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 4, background: '#16A34A', color: 'white' }}>New</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: '#16A34A', letterSpacing: -2 }}>&raquo;</span>
         </div>
 
         {/* Form */}
@@ -653,7 +653,7 @@ function AddPartyModal({ onSave, onClose }) {
             }}
             disabled={!name.trim()}
             style={{
-              padding: '9px 32px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 700,
+              padding: '9px 32px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 500,
               background: name.trim() ? 'var(--blue)' : 'var(--gray-200)',
               color: name.trim() ? 'white' : 'var(--gray-400)',
               cursor: name.trim() ? 'pointer' : 'not-allowed',
@@ -734,7 +734,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
       }}>
         {/* Colored header */}
         <div style={{ background: accent, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ color: 'white', fontSize: 15, fontWeight: 700 }}>
+          <span style={{ color: 'white', fontSize: 15, fontWeight: 500 }}>
             Add {isIn ? 'Cash In' : 'Cash Out'} Entry
           </span>
           <X size={18} style={{ color: 'white', cursor: 'pointer' }} onClick={onClose} />
@@ -925,7 +925,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               <Paperclip size={14} color="var(--blue)" />
               <span style={{ fontWeight: 600, color: 'var(--blue)' }}>Attach Bills</span>
               {form.bills.length > 0 && (
-                <span style={{ marginLeft: 4, fontSize: 12, fontWeight: 700, color: 'var(--blue)' }}>({form.bills.length})</span>
+                <span style={{ marginLeft: 4, fontSize: 12, fontWeight: 500, color: 'var(--blue)' }}>({form.bills.length})</span>
               )}
             </button>
             <div style={{ fontSize: 12, color: '#16A34A', paddingLeft: 14 }}>Attach up to 4 images or PDF files</div>
@@ -941,7 +941,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               <Zap size={14} color="var(--gray-400)" />
               <span style={{ fontSize: 13, color: 'var(--gray-600)', fontWeight: 500 }}>Add more fields</span>
               <span style={{
-                fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 3,
+                fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3,
                 background: '#DBEAFE', color: 'var(--blue)', textTransform: 'uppercase',
               }}>New</span>
             </div>
@@ -960,7 +960,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               flex: 1, padding: '10px 0', borderRadius: 8,
               background: form.amount ? 'var(--blue)' : 'var(--gray-200)',
               color: form.amount ? 'white' : 'var(--gray-400)',
-              border: 'none', fontSize: 13, fontWeight: 700, cursor: form.amount ? 'pointer' : 'not-allowed',
+              border: 'none', fontSize: 13, fontWeight: 500, cursor: form.amount ? 'pointer' : 'not-allowed',
             }}
           >
             Save &amp; Add New
@@ -1041,7 +1041,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
 
         {/* Header */}
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--gray-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--gray-900)' }}>Edit Entry</span>
+          <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Edit Entry</span>
           <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-500)' }} onClick={onClose} />
         </div>
 
@@ -1088,7 +1088,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
             <input
               type="number" min="0" step="any" autoFocus
               value={form.amount} onChange={(e) => set('amount', e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', border: `2px solid ${form.amount ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, fontWeight: 700, outline: 'none', boxSizing: 'border-box', color: accent }}
+              style={{ width: '100%', padding: '9px 12px', border: `2px solid ${form.amount ? 'var(--blue)' : 'var(--gray-200)'}`, borderRadius: 8, fontSize: 14, fontWeight: 500, outline: 'none', boxSizing: 'border-box', color: accent }}
               onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
               onBlur={(e) => e.target.style.borderColor = form.amount ? 'var(--blue)' : 'var(--gray-200)'}
             />
@@ -1160,7 +1160,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
           <button
             onClick={handleSave}
             disabled={!form.amount || saving}
-            style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 700, background: form.amount ? 'var(--blue)' : 'var(--gray-200)', color: form.amount ? 'white' : 'var(--gray-400)', cursor: form.amount ? 'pointer' : 'not-allowed' }}
+            style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 500, background: form.amount ? 'var(--blue)' : 'var(--gray-200)', color: form.amount ? 'white' : 'var(--gray-400)', cursor: form.amount ? 'pointer' : 'not-allowed' }}
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -1199,7 +1199,7 @@ function DeleteConfirmModal({ txns, onConfirm, onClose }) {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Delete {txns.length > 1 ? `${txns.length} Entries` : 'Entry'}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Delete {txns.length > 1 ? `${txns.length} Entries` : 'Entry'}</span>
           <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}>
             <X size={18} />
           </button>
@@ -1356,7 +1356,7 @@ function MoveConfirmModal({ count, targetBookName, onConfirm, onCancel }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onCancel}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Move {count} {count === 1 ? 'Entry' : 'Entries'}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Move {count} {count === 1 ? 'Entry' : 'Entries'}</span>
           <button onClick={onCancel} style={{ display: 'flex', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}><X size={18} /></button>
         </div>
         <div style={{ padding: '20px 24px' }}>
@@ -1427,7 +1427,7 @@ function MoveEntryPanel({ txns, currentBook, targetBooks, businessId, onClose, o
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--gray-100)', flexShrink: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Move {count} {count === 1 ? 'Entry' : 'Entries'}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Move {count} {count === 1 ? 'Entry' : 'Entries'}</span>
           <button onClick={onClose} style={{ display: 'flex', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}><X size={18} /></button>
         </div>
 
@@ -1538,7 +1538,7 @@ function CopyConfirmModal({ count, targetBookName, onConfirm, onCancel }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onCancel}>
       <div style={{ background: 'var(--white)', borderRadius: 12, width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Copy &amp; Paste {count} {count === 1 ? 'Entry' : 'Entries'}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Copy &amp; Paste {count} {count === 1 ? 'Entry' : 'Entries'}</span>
           <button onClick={onCancel} style={{ display: 'flex', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}><X size={18} /></button>
         </div>
         <div style={{ padding: '20px 24px' }}>
@@ -1610,7 +1610,7 @@ function CopyEntryPanel({ txns, currentBook, targetBooks, businessId, onClose, o
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid var(--gray-100)', flexShrink: 0 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>Copy {count} {count === 1 ? 'Entry' : 'Entries'}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>Copy {count} {count === 1 ? 'Entry' : 'Entries'}</span>
           <button onClick={onClose} style={{ display: 'flex', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', padding: 2 }}><X size={18} /></button>
         </div>
 
@@ -1984,7 +1984,7 @@ export default function TransactionView() {
           >
             <ArrowLeft size={18} />
           </button>
-          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--gray-900)' }}>{book.name}</span>
+          <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--gray-900)' }}>{book.name}</span>
           <button
             onClick={goToSettings}
             title="Book Settings"
@@ -2109,29 +2109,29 @@ export default function TransactionView() {
       }}>
         <div style={{ flex: 1, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10, borderRight: '1px solid var(--gray-200)' }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#16A34A', lineHeight: 1 }}>+</span>
+            <span style={{ fontSize: 17, fontWeight: 500, color: '#16A34A', lineHeight: 1 }}>+</span>
           </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 500 }}>Cash In</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#16A34A' }}>{formatAmount(totalIn)}</div>
+            <div style={{ fontSize: 17, fontWeight: 500, color: '#16A34A' }}>{formatAmount(totalIn)}</div>
           </div>
         </div>
         <div style={{ flex: 1, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10, borderRight: '1px solid var(--gray-200)' }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#DC2626', lineHeight: 1 }}>-</span>
+            <span style={{ fontSize: 17, fontWeight: 500, color: '#DC2626', lineHeight: 1 }}>-</span>
           </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 500 }}>Cash Out</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#DC2626' }}>{formatAmount(totalOut)}</div>
+            <div style={{ fontSize: 17, fontWeight: 500, color: '#DC2626' }}>{formatAmount(totalOut)}</div>
           </div>
         </div>
         <div style={{ flex: 1, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: balance >= 0 ? '#DCFCE7' : '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: balance >= 0 ? '#16A34A' : '#DC2626', lineHeight: 1 }}>=</span>
+            <span style={{ fontSize: 17, fontWeight: 500, color: balance >= 0 ? '#16A34A' : '#DC2626', lineHeight: 1 }}>=</span>
           </div>
           <div>
             <div style={{ fontSize: 11, color: 'var(--gray-500)', fontWeight: 500 }}>Net Balance</div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: balance >= 0 ? '#16A34A' : '#DC2626' }}>
+            <div style={{ fontSize: 17, fontWeight: 500, color: balance >= 0 ? '#16A34A' : '#DC2626' }}>
               {formatAmount(Math.abs(balance))}{balance < 0 ? ' Dr' : ''}
             </div>
           </div>
@@ -2284,7 +2284,7 @@ export default function TransactionView() {
                           )}
                         </td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: t.type === 'IN' ? '#16A34A' : '#DC2626' }}>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: t.type === 'IN' ? '#16A34A' : '#DC2626' }}>
                             {t.type === 'IN' ? '+' : '-'}{formatAmount(t.amount)}
                           </span>
                         </td>
