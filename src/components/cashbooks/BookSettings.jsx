@@ -1015,7 +1015,7 @@ export default function BookSettings() {
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-500)', marginBottom: 10 }}>Members in this book</div>
 
               {/* Members list */}
-              <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10 }}>
                 {bookMembers.map((m, i) => {
                   const badgeStyle = ROLE_BADGE[m.role] || { bg: '#F3F4F6', color: '#374151' };
                   return (

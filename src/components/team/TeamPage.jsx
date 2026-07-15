@@ -141,6 +141,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
   const isValidEmail   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canNext        = isValidEmail && name.trim().length > 0;
   const isExistingUser = lookupState === 'found';
+  const [submitError, setSubmitError] = useState(null);
 
   const handleEmailChange = (val) => {
     setEmail(val);
@@ -159,9 +160,14 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
     }, 600);
   };
 
-  const handleFinish = () => {
-    onInvite({ name: name.trim(), email: email.trim(), role: selectedRole, user_id: userId, employee_id: empId || null });
-    onClose();
+  const handleFinish = async () => {
+    setSubmitError(null);
+    try {
+      await onInvite({ name: name.trim(), email: email.trim(), role: selectedRole, user_id: userId, employee_id: empId || null });
+      onClose();
+    } catch (err) {
+      setSubmitError(err.message || 'Failed to add member');
+    }
   };
 
   /* Avatar */
@@ -288,6 +294,11 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
 
               {/* Body — scrollable */}
               <div style={{ overflowY: 'auto', flex: 1, padding: '16px 24px 8px' }}>
+                {submitError && (
+                  <div style={{ padding: '10px 14px', marginBottom: 16, background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 8, color: '#DC2626', fontSize: 13 }}>
+                    {submitError}
+                  </div>
+                )}
 
                 {/* Top message */}
                 <p style={{ fontSize: 13, color: '#374151', marginBottom: 16, lineHeight: 1.6 }}>
@@ -955,6 +966,96 @@ function BookRoleDropdown({ value, onChange }) {
   );
 }
 
+/* ─── ReportsToDropdown ─────────────────────────────────────── */
+function ReportsToDropdown({ members, currentReportsTo, currentMemberId, onSave, onCancel }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(currentReportsTo || 'none');
+  const btnRef = useRef(null);
+  
+  // Eligible managers: not the current member
+  const eligibleManagers = members.filter(m => m.id !== currentMemberId);
+  const filtered = eligibleManagers.filter(m => 
+    (m.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (m.employee_id || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedName = selected === 'none' ? 'None' : (members.find(m => m.id === selected)?.name || 'None');
+
+  useEffect(() => {
+    if (!open) return;
+    const h = e => { if (btnRef.current && !btnRef.current.closest('[data-rtd]')?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  return (
+    <div data-rtd style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+      <div 
+        ref={btnRef}
+        onClick={() => setOpen(p => !p)}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', border: '1px solid #2563EB', borderRadius: 4, background: '#EFF6FF', cursor: 'pointer', fontSize: 13, color: '#374151', minWidth: 150 }}
+      >
+        <span>{selectedName}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 120ms' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <svg onClick={() => onSave(selected === 'none' ? null : selected)} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" style={{ cursor: 'pointer', flexShrink: 0 }}>
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, width: 280, background: '#fff', border: '1px solid #2563EB', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid #F3F4F6' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', border: '1px solid #3B82F6', borderRadius: 4 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input 
+                autoFocus
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                placeholder="Search by name or employee ID..." 
+                style={{ border: 'none', outline: 'none', width: '100%', fontSize: 13, color: '#111827' }} 
+              />
+            </div>
+          </div>
+          <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+            <div 
+              onClick={() => { setSelected('none'); setOpen(false); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer', background: selected === 'none' ? '#F9FAFB' : 'transparent' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+              onMouseLeave={e => e.currentTarget.style.background = selected === 'none' ? '#F9FAFB' : 'transparent'}
+            >
+              <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {selected === 'none' && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />}
+              </div>
+              <span style={{ fontSize: 13, color: '#374151' }}>None</span>
+            </div>
+            
+            {filtered.map(m => (
+              <div 
+                key={m.id}
+                onClick={() => { setSelected(m.id); setOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer', background: selected === m.id ? '#F9FAFB' : 'transparent' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                onMouseLeave={e => e.currentTarget.style.background = selected === m.id ? '#F9FAFB' : 'transparent'}
+              >
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {selected === m.id && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB' }} />}
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, color: '#374151' }}>{m.name} {m.is_owner ? '(Owner)' : ''}</span>
+                  <span style={{ fontSize: 11, padding: '2px 8px', background: '#ECFDF5', color: '#059669', borderRadius: 12, fontWeight: 500 }}>{m.role}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── AddToBooksDrawer ──────────────────────────────────────── */
 function AddToBooksDrawer({ member, currentBusinessId, memberBooks, onBooksAdded, onClose }) {
   const { cashbooks } = useApp();
@@ -1147,6 +1248,7 @@ function AddToBooksDrawer({ member, currentBusinessId, memberBooks, onBooksAdded
 function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdate, onRemove }) {
   const [empIdEdit, setEmpIdEdit]         = useState(false);
   const [empIdVal, setEmpIdVal]           = useState(member.employee_id || '');
+  const [reportsToEdit, setReportsToEdit] = useState(false);
   const [permOpen, setPermOpen]           = useState(true);
   const [teamOpen, setTeamOpen]           = useState(false);
   const [booksOpen, setBooksOpen]         = useState(true);
@@ -1162,6 +1264,7 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
   const [bookRemoveConfirm, setBookRemoveConfirm]       = useState(null); // { bookId, bookName }
 
   const isOwner = !!member.is_owner;
+  const isPending = member.invite_status === 'Pending';
 
   // Fetch member's books from API (skip for owner entries without real member id)
   useEffect(() => {
@@ -1254,6 +1357,8 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
     ? new Date(member.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
     : '—';
 
+  const dateText = isPending ? `Invitation sent on ${memberSince}` : `Member since ${memberSince}`;
+
   // For Primary Admin: team members that report to them
   const ownerEntry = members.find(m => m.is_owner);
   const directReports = members.filter(m => !m.is_owner && m.reports_to === member.id);
@@ -1276,7 +1381,7 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
             </div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 500, color: '#111827' }}>{member.name}</div>
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Member since {memberSince}</div>
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{dateText}</div>
             </div>
           </div>
           <RoleBadge role={member.role} />
@@ -1367,14 +1472,51 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span style={{ fontSize: 11, color: '#9CA3AF' }}>Reports To</span>
               </div>
-              {reportsToMember
-                ? <span style={{ fontSize: 13, color: '#111827' }}>{reportsToMember.name}</span>
-                : <span style={{ fontSize: 13, color: '#2563EB', cursor: 'pointer', fontWeight: 500 }}>Assign Manager</span>
-              }
+              {reportsToEdit ? (
+                <ReportsToDropdown 
+                  members={members} 
+                  currentReportsTo={member.reports_to}
+                  currentMemberId={member.id}
+                  onSave={(newReportsTo) => {
+                    onUpdate({ reports_to: newReportsTo });
+                    setReportsToEdit(false);
+                  }}
+                  onCancel={() => setReportsToEdit(false)}
+                />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {reportsToMember
+                    ? <span style={{ fontSize: 13, color: '#111827' }}>{reportsToMember.name}</span>
+                    : <span onClick={() => setReportsToEdit(true)} style={{ fontSize: 13, color: '#2563EB', cursor: 'pointer', fontWeight: 500 }}>Assign Manager</span>
+                  }
+                  {reportsToMember && (
+                    <svg onClick={() => setReportsToEdit(true)} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" style={{ cursor: 'pointer' }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Pending Invitation Alert */}
+      {isPending && (
+        <div style={{ border: '1px solid #FEF08A', borderRadius: 12, padding: '20px', marginBottom: 16, background: '#FEF9C3' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#92400E' }}>Pending Invitation</span>
+          </div>
+          <div style={{ fontSize: 13, color: '#92400E', marginBottom: 16, paddingLeft: 30, lineHeight: 1.5 }}>
+            {member.mobile || member.email} hasn't registered on CashBook yet. Send them invite link & ask to register.
+          </div>
+          <button style={{ width: '100%', padding: '10px', background: '#fff', border: '1px solid #FCD34D', borderRadius: 8, color: '#D97706', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 150ms' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#FFFBEB'}
+            onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Resend Invitation
+          </button>
+        </div>
+      )}
 
       {/* Employee Permission */}
       <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, marginBottom: 12, background: '#fff', overflow: 'hidden' }}>
@@ -1558,9 +1700,13 @@ function EmployeeInfoPanel({ member, members, currentBusinessId, onBack, onUpdat
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                {isPending ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                )}
               </div>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#DC2626' }}>Remove from business</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#DC2626' }}>{isPending ? 'Cancel Invitation' : 'Remove from business'}</span>
             </div>
           </div>
         </div>
@@ -1647,11 +1793,12 @@ const WALLET_OPTIONS        = ['Not Issued', 'Issued', 'Pending KYC', 'Paused', 
 
 /* ─── Main ─────────────────────────────────────────────────── */
 export default function TeamPage() {
-  const { user, currentBusinessId } = useApp();
+  const { user, currentBusinessId, currentBusiness, businesses } = useApp();
 
   const [members, setMembers]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [accepting, setAccepting]     = useState(false);
   const [tab, setTab]                 = useState('all');
   const [search, setSearch]           = useState('');
   const [openDropdown, setOpenDropdown]     = useState(null);
@@ -1684,22 +1831,8 @@ export default function TeamPage() {
 
   // Invite / add a new member
   const handleInvite = async (data) => {
-    try {
-      const { member } = await api.team.add(currentBusinessId, data);
-      if (member) { setMembers(prev => [...prev, member]); return; }
-    } catch { /* fall through to optimistic */ }
-    setMembers(prev => [...prev, {
-      id:            `local_${Date.now()}`,
-      name:          data.name,
-      mobile:        data.mobile || null,
-      email:         data.email  || null,
-      employee_id:   data.employee_id || null,
-      role:          data.role || 'Employee',
-      invite_status: 'Pending',
-      reports_to:    null,
-      is_owner:      false,
-      created_at:    new Date().toISOString(),
-    }]);
+    const { member } = await api.team.add(currentBusinessId, data);
+    if (member) { setMembers(prev => [...prev, member]); }
   };
 
   // Remove a member
@@ -1717,6 +1850,17 @@ export default function TeamPage() {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [openDropdown]);
+
+  const handleAcceptInvite = async (bizId) => {
+    try {
+      setAccepting(true);
+      await api.businesses.acceptInvite(bizId);
+      window.location.href = `/businesses/${bizId}/cashbooks`;
+    } catch (err) {
+      alert(err.message || 'Failed to accept invitation');
+      setAccepting(false);
+    }
+  };
 
   // Derived — use reports_to (API field) for "your team" filter
   const yourTeamMembers  = members.filter(m => m.is_owner || m.reports_to === (members.find(x => x.is_owner)?.id));
@@ -1742,7 +1886,10 @@ export default function TeamPage() {
     return true;
   });
 
-  const allSelected      = filtered.length > 0 && selected.length === filtered.length;
+  const acceptedFiltered = filtered.filter(m => m.invite_status !== 'Pending');
+  const pendingFiltered = filtered.filter(m => m.invite_status === 'Pending');
+
+  const allSelected      = acceptedFiltered.length > 0 && selected.length === acceptedFiltered.length;
   const uniqueRoles      = [...new Set(members.map(m => m.role))].map(r => ({ value: r, label: r }));
   const reportsToOptions = [
     { value: 'none', label: 'None' },
@@ -1771,29 +1918,52 @@ export default function TeamPage() {
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1200 }}>
+    <div style={{ padding: '24px 28px' }}>
       <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 20, color: '#111827' }}>Team</h1>
 
+      {businesses?.filter(b => b.my_invite_status === 'Pending').map(b => (
+        <div key={b.id} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 24, marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 48, height: 48, background: '#DBEAFE', color: '#2563EB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <h2 style={{ fontSize: 18, fontWeight: 600, color: '#111827', marginBottom: 4 }}>You're Invited!</h2>
+              <p style={{ fontSize: 14, color: '#4B5563' }}>You have been invited to join <strong>{b.name}</strong> on CashBook.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleAcceptInvite(b.id)}
+            disabled={accepting}
+            style={{ padding: '10px 24px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: accepting ? 'not-allowed' : 'pointer', opacity: accepting ? 0.7 : 1, transition: 'background 150ms' }}
+          >
+            {accepting ? 'Accepting...' : 'Accept Invitation'}
+          </button>
+        </div>
+      ))}
+
       {/* Top 3 cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 32 }}>
         {[
           { title: 'Invite your team', desc: 'Invite team members to CashBook, set their access, and send out invites.', onClick: () => setShowInvite(true) },
           { title: 'Member fields', desc: 'Manage employee ID, location, department and other fields.', badge: 'New' },
           { title: 'View roles & permissions', desc: 'See role based permissions and access in your organisation.' },
         ].map(({ title, desc, badge, onClick }) => (
           <div key={title} onClick={onClick}
-            style={{ border: '1px solid var(--gray-200)', borderRadius: 10, padding: '16px 18px', cursor: onClick ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'box-shadow 150ms' }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+            style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px', cursor: onClick ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)'; e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)'; e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{title}</span>
-                {badge && <span style={{ padding: '2px 7px', borderRadius: 4, background: '#16A34A', color: 'white', fontSize: 10, fontWeight: 500 }}>{badge}</span>}
+                {badge && <span style={{ padding: '2px 8px', borderRadius: 12, background: '#ECFDF5', color: '#059669', fontSize: 10, fontWeight: 600, letterSpacing: '0.02em', border: '1px solid #A7F3D0' }}>{badge}</span>}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--gray-500)', lineHeight: 1.5 }}>{desc}</div>
+              <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, paddingRight: 8 }}>{desc}</div>
             </div>
-            <ChevronRight size={16} color="var(--gray-400)" style={{ flexShrink: 0, marginLeft: 12 }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', background: '#F9FAFB', flexShrink: 0 }}>
+              <ChevronRight size={14} color="#9CA3AF" />
+            </div>
           </div>
         ))}
       </div>
@@ -1812,19 +1982,28 @@ export default function TeamPage() {
       </div>
 
       {/* Search + actions row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--gray-200)', borderRadius: 6, padding: '7px 12px', background: 'white' }}>
-          <Search size={14} color="var(--gray-400)" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #E5E7EB', borderRadius: 8, padding: '8px 14px', background: 'white', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'border-color 200ms' }}
+          onFocusCapture={e => e.currentTarget.style.borderColor = '#93C5FD'}
+          onBlurCapture={e => e.currentTarget.style.borderColor = '#E5E7EB'}
+        >
+          <Search size={15} color="#9CA3AF" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, number, employee ID..."
             style={{ border: 'none', outline: 'none', flex: 1, fontSize: 13, background: 'transparent' }} />
-          <span style={{ color: 'var(--gray-300)', fontSize: 12 }}>/</span>
+          <span style={{ color: '#D1D5DB', fontSize: 12, fontWeight: 500 }}>/</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, border: '1px solid var(--gray-200)', borderRadius: 6, background: 'white', cursor: 'pointer', color: 'var(--gray-500)' }}>
-            <Table2 size={14} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid #E5E7EB', borderRadius: 8, background: 'white', cursor: 'pointer', color: '#6B7280', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'all 150ms' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+          >
+            <Table2 size={15} />
           </button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', border: '1px solid var(--gray-200)', borderRadius: 6, fontSize: 13, cursor: 'pointer', background: 'white', color: 'var(--gray-700)' }}>
-            <Download size={13} /> Download
+          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: 'white', color: '#374151', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', fontWeight: 500, transition: 'all 150ms' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+          >
+            <Download size={14} /> Download
           </button>
         </div>
       </div>
@@ -1892,13 +2071,13 @@ export default function TeamPage() {
       </div>
 
       {/* Table */}
-      <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--gray-200)' }}>
-              <th style={{ width: 40, padding: '10px 12px', textAlign: 'center' }}>
+            <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+              <th style={{ width: 40, padding: '12px 16px', textAlign: 'center' }}>
                 <input type="checkbox" checked={allSelected}
-                  onChange={e => setSelected(e.target.checked ? filtered.map(m => m.id) : [])}
+                  onChange={e => setSelected(e.target.checked ? acceptedFiltered.map(m => m.id) : [])}
                   style={{ cursor: 'pointer', accentColor: 'var(--blue)' }} />
               </th>
               {[
@@ -1910,7 +2089,7 @@ export default function TeamPage() {
                 { label: 'Reports To', info: true },
                 { label: 'Wallet Status' },
               ].map(h => (
-                <th key={h.label} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
+                <th key={h.label} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     {h.label}
                     {h.info && <Info size={12} style={{ opacity: 0.6 }} />}
@@ -1921,26 +2100,26 @@ export default function TeamPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--gray-400)', fontSize: 13 }}>Loading members...</td></tr>
-            ) : filtered.map((m, i) => (
+              <tr><td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Loading members...</td></tr>
+            ) : acceptedFiltered.map((m, i) => (
               <tr key={m.id}
-                style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--gray-100)' : 'none', cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
+                style={{ borderBottom: i < acceptedFiltered.length - 1 ? '1px solid #F3F4F6' : 'none', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 {/* Checkbox — does not trigger row click */}
-                <td style={{ padding: '12px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                <td style={{ padding: '14px 16px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                   <input type="checkbox" checked={selected.includes(m.id)}
                     onChange={e => setSelected(prev => e.target.checked ? [...prev, m.id] : prev.filter(id => id !== m.id))}
                     style={{ cursor: 'pointer', accentColor: 'var(--blue)' }} />
                 </td>
                 {/* Name */}
-                <td style={{ padding: '12px', fontSize: 13, fontWeight: 600, color: '#111827' }} onClick={() => setSelectedMember(m)}>
+                <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 500, color: '#111827' }} onClick={() => setSelectedMember(m)}>
                   {m.name}
-                  {m.is_owner && <span style={{ color: 'var(--gray-400)', fontWeight: 400, fontSize: 12 }}> (You)</span>}
+                  {m.is_owner && <span style={{ color: '#9CA3AF', fontWeight: 400, fontSize: 12 }}> (You)</span>}
                 </td>
                 {/* Employee ID — inline edit */}
-                <td style={{ padding: '12px', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
+                <td style={{ padding: '14px 16px', fontSize: 13 }} onClick={(e) => e.stopPropagation()}>
                   {editingEmpId?.memberId === m.id ? (
                     <input
                       autoFocus
@@ -1972,23 +2151,23 @@ export default function TeamPage() {
                   )}
                 </td>
                 {/* Email */}
-                <td style={{ padding: '12px', fontSize: 13, color: 'var(--gray-500)' }} onClick={() => setSelectedMember(m)}>
+                <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }} onClick={() => setSelectedMember(m)}>
                   {m.email || '-'}
                 </td>
                 {/* Mobile */}
-                <td style={{ padding: '12px', fontSize: 13, color: '#374151' }} onClick={() => setSelectedMember(m)}>
+                <td style={{ padding: '14px 16px', fontSize: 13, color: '#4B5563' }} onClick={() => setSelectedMember(m)}>
                   {m.mobile || '-'}
                 </td>
                 {/* Role — inline dropdown for non-owners */}
-                <td style={{ padding: '12px' }} onClick={e => e.stopPropagation()}>
+                <td style={{ padding: '14px 16px' }} onClick={e => e.stopPropagation()}>
                   <InlineRoleDropdown member={m} onUpdate={(role) => updateMemberField(m, { role })} />
                 </td>
                 {/* Reports To — inline dropdown */}
-                <td style={{ padding: '12px', fontSize: 12 }} onClick={e => e.stopPropagation()}>
+                <td style={{ padding: '14px 16px', fontSize: 12 }} onClick={e => e.stopPropagation()}>
                   <InlineReportsToDropdown member={m} members={members} onUpdate={(reports_to) => updateMemberField(m, { reports_to })} />
                 </td>
                 {/* Wallet Status */}
-                <td style={{ padding: '12px' }} onClick={() => setSelectedMember(m)}>
+                <td style={{ padding: '14px 16px' }} onClick={() => setSelectedMember(m)}>
                   <WalletBadge status={m.walletStatus || 'Not Issued'} />
                 </td>
               </tr>
@@ -2013,6 +2192,53 @@ export default function TeamPage() {
           </select>
         </div>
       </div>
+
+      {/* Pending Invites Section */}
+      {pendingFiltered.length > 0 && (
+        <div style={{ marginTop: 40, marginBottom: 40 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 16 }}>
+            Pending Invitations
+          </h3>
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #E5E7EB', background: '#F9FAFB' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Name</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Email</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Mobile Number</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Role</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingFiltered.map((m, i) => (
+                    <tr key={m.id}
+                      style={{ borderBottom: i < pendingFiltered.length - 1 ? '1px solid #F3F4F6' : 'none', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => setSelectedMember(m)}
+                    >
+                      <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 500, color: '#111827' }}>{m.name}</td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>{m.email || '-'}</td>
+                      <td style={{ padding: '14px 16px', fontSize: 13, color: '#4B5563' }}>{m.mobile || '-'}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <RoleBadge role={m.role} />
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: 13 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#FEF9C3', color: '#854D0E', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EAB308' }} />
+                          Pending Invite
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showInvite && <AddTeamMemberPanel onClose={() => setShowInvite(false)} onInvite={handleInvite} />}
     </div>

@@ -493,7 +493,7 @@ function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select
           <div style={{ borderTop: '1px solid var(--gray-100)' }}>
             {addLabel && (
               <button
-                onClick={() => { onAdd && onAdd(); setOpen(false); setSearch(''); }}
+                onClick={() => { onAdd && onAdd(search); setOpen(false); setSearch(''); }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', border: 'none', background: 'var(--white)', fontSize: 13, color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--blue-light)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--white)'}
@@ -680,7 +680,61 @@ function initTime() {
   return { hour: String(h), minute: m, period: p };
 }
 
-function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onAddParty }) {
+/* ─── Add Custom Field Modal ──────────────────────────────────── */
+function AddCustomFieldModal({ title, placeholder, initialValue, onSave, onClose }) {
+  const [val, setVal] = useState(initialValue || '');
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: 'var(--white)', borderRadius: 12, width: 360, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+          <h3 style={{ margin: 0, fontSize: 16, color: 'var(--gray-800)', fontWeight: 600 }}>{title}</h3>
+          <X size={18} color="var(--gray-400)" style={{ cursor: 'pointer' }} onClick={onClose} />
+        </div>
+        <div style={{ padding: '20px' }}>
+          <input
+            autoFocus
+            type="text"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            placeholder={placeholder}
+            style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--blue)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--gray-200)'}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && val.trim()) onSave(val.trim());
+              if (e.key === 'Escape') onClose();
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '16px 20px', borderTop: '1px solid var(--gray-100)', background: 'var(--gray-50)' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '10px 0', borderRadius: 8, background: 'var(--white)', border: '1px solid var(--gray-200)', color: 'var(--gray-700)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={() => val.trim() && onSave(val.trim())} disabled={!val.trim()} style={{ flex: 1, padding: '10px 0', borderRadius: 8, background: val.trim() ? 'var(--blue)' : 'var(--gray-200)', border: 'none', color: val.trim() ? 'white' : 'var(--gray-400)', fontSize: 13, fontWeight: 600, cursor: val.trim() ? 'pointer' : 'not-allowed' }}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── File Preview Modal ──────────────────────────────────────── */
+function FilePreviewModal({ url, onClose }) {
+  if (!url) return null;
+  const isPdf = url.toLowerCase().includes('.pdf');
+  
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+      <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', padding: 10, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}>
+        <X size={24} />
+      </button>
+      {isPdf ? (
+        <iframe src={url} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} title="PDF Preview" />
+      ) : (
+        <img src={url} style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} alt="Preview" />
+      )}
+    </div>
+  );
+}
+
+function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onAddParty, businessId, bookId }) {
   const isIn = type === 'IN';
   const accent = isIn ? '#16A34A' : '#DC2626';
   const accentLight = isIn ? '#DCFCE7' : '#FEE2E2';
@@ -699,25 +753,51 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
   const fileRef = useRef(null);
   const [billHover, setBillHover] = useState(false);
   const [showAddParty, setShowAddParty] = useState(false);
+  const [previewModalUrl, setPreviewModalUrl] = useState(null);
+  const [promptState, setPromptState] = useState(null);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const setTime = (field, val) => setForm((prev) => ({ ...prev, time: { ...prev.time, [field]: val } }));
 
-  const handleSave = (addNew) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (addNew) => {
     if (!form.amount) return;
-    onSave({
-      type,
-      amount: parseFloat(form.amount),
-      date: form.date,
-      party: form.party,
-      remarks: form.remarks,
-      category: form.category,
-      paymentMode: form.paymentMode,
-    });
-    if (addNew) {
-      setForm({ date: todayStr(), time: initTime(), timeEditing: false, amount: '', party: '', remarks: '', category: '', paymentMode: '', bills: [] });
-    } else {
-      onClose();
+    setSaving(true);
+    try {
+      let uploadedUrls = [];
+      const newFiles = form.bills.filter(f => f instanceof File);
+      const existingUrls = form.bills.filter(f => typeof f === 'string');
+      
+      if (newFiles.length > 0) {
+        const formData = new FormData();
+        newFiles.forEach(f => formData.append('attachments', f));
+        const res = await api.transactions.uploadAttachments(businessId, bookId, formData);
+        uploadedUrls = res.urls || [];
+      }
+      
+      const finalAttachments = [...existingUrls, ...uploadedUrls];
+
+      await onSave({
+        type,
+        amount: parseFloat(form.amount),
+        date: form.date,
+        party: form.party,
+        remarks: form.remarks,
+        category: form.category,
+        paymentMode: form.paymentMode,
+        attachments: finalAttachments.length > 0 ? finalAttachments : null,
+      });
+
+      if (addNew) {
+        setForm({ date: todayStr(), time: initTime(), timeEditing: false, amount: '', party: '', remarks: '', category: '', paymentMode: '', bills: [] });
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      alert('Failed to upload/save: ' + err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -879,6 +959,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
                 placeholder="Search or Select"
                 suggestions={CATEGORY_SUGGESTIONS}
                 addLabel="Add New Category"
+                onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -893,6 +974,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
                 fixedOptions={PAYMENT_FIXED}
                 suggestions={PAYMENT_SUGGESTIONS}
                 addLabel="Add New Payment Mode"
+                onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
               />
             </div>
           </div>
@@ -906,7 +988,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               multiple
               style={{ display: 'none' }}
               onChange={(e) => {
-                const files = Array.from(e.target.files).slice(0, 4);
+                const files = Array.from(e.target.files);
                 set('bills', [...form.bills, ...files].slice(0, 4));
                 e.target.value = '';
               }}
@@ -925,10 +1007,44 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               <Paperclip size={14} color="var(--blue)" />
               <span style={{ fontWeight: 600, color: 'var(--blue)' }}>Attach Bills</span>
               {form.bills.length > 0 && (
-                <span style={{ marginLeft: 4, fontSize: 12, fontWeight: 500, color: 'var(--blue)' }}>({form.bills.length})</span>
+                <span style={{ marginLeft: 4, fontSize: 12, fontWeight: 500, color: 'var(--blue)' }}>({form.bills.length}/4)</span>
               )}
             </button>
             <div style={{ fontSize: 12, color: '#16A34A', paddingLeft: 14 }}>Attach up to 4 images or PDF files</div>
+            
+            {/* Attachment Previews */}
+            {form.bills.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingLeft: 14 }}>
+                {form.bills.map((file, idx) => {
+                  const isFileObj = file instanceof File;
+                  const name = isFileObj ? file.name : file.split('/').pop();
+                  const isImg = isFileObj ? file.type.startsWith('image/') : name.match(/\.(jpeg|jpg|gif|png)$/i);
+                  const previewUrl = isFileObj ? URL.createObjectURL(file) : file;
+                  
+                  return (
+                    <div key={idx} style={{ position: 'relative', width: 60, height: 60, border: '1px solid var(--gray-200)', borderRadius: 6, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewModalUrl(previewUrl)}>
+                      {isImg ? (
+                        <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="attachment" />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--gray-50)' }}>
+                          <FileText size={20} color="var(--gray-400)" />
+                          <span style={{ fontSize: 9, color: 'var(--gray-500)', marginTop: 4, maxWidth: 50, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          set('bills', form.bills.filter((_, i) => i !== idx));
+                        }}
+                        style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Add more fields banner */}
@@ -995,12 +1111,35 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
           onClose={() => setShowAddParty(false)}
         />
       )}
+
+      {previewModalUrl && (
+        <FilePreviewModal url={previewModalUrl} onClose={() => setPreviewModalUrl(null)} />
+      )}
+
+      {promptState && (
+        <AddCustomFieldModal
+          title={promptState.title}
+          placeholder={promptState.placeholder}
+          initialValue={promptState.initialValue}
+          onSave={(val) => { 
+            if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val)) {
+              CATEGORY_SUGGESTIONS.push(val);
+            }
+            if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val)) {
+              PAYMENT_SUGGESTIONS.push(val);
+            }
+            set(promptState.type, val); 
+            setPromptState(null); 
+          }}
+          onClose={() => setPromptState(null)}
+        />
+      )}
     </>
   );
 }
 
 /* ─── Edit Entry panel ──────────────────────────────────────── */
-function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) {
+function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, businessId, bookId }) {
   const [type, setType] = useState(txn.type);
   const [form, setForm] = useState({
     date: txn.date || todayStr(),
@@ -1009,10 +1148,17 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
     remarks: txn.remarks || '',
     category: txn.category || '',
     paymentMode: txn.payment_mode || txn.paymentMode || '',
+    bills: (() => {
+      if (!txn.attachments) return [];
+      try { return typeof txn.attachments === 'string' ? JSON.parse(txn.attachments) : txn.attachments; }
+      catch { return []; }
+    })(),
   });
   const [saving, setSaving] = useState(false);
   const [showAddParty, setShowAddParty] = useState(false);
   const fileRef = useRef(null);
+  const [previewModalUrl, setPreviewModalUrl] = useState(null);
+  const [promptState, setPromptState] = useState(null);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const accent = type === 'IN' ? '#16A34A' : '#DC2626';
@@ -1028,7 +1174,32 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
     if (!form.amount) return;
     setSaving(true);
     try {
-      await onSave({ id: txn.id, type, amount: parseFloat(form.amount), date: form.date, party: form.party, remarks: form.remarks, category: form.category, paymentMode: form.paymentMode });
+      let uploadedUrls = [];
+      const newFiles = form.bills.filter(f => f instanceof File);
+      const existingUrls = form.bills.filter(f => typeof f === 'string');
+      
+      if (newFiles.length > 0) {
+        const formData = new FormData();
+        newFiles.forEach(f => formData.append('attachments', f));
+        const res = await api.transactions.uploadAttachments(businessId, bookId, formData);
+        uploadedUrls = res.urls || [];
+      }
+      
+      const finalAttachments = [...existingUrls, ...uploadedUrls];
+
+      await onSave({ 
+        id: txn.id, 
+        type, 
+        amount: parseFloat(form.amount), 
+        date: form.date, 
+        party: form.party, 
+        remarks: form.remarks, 
+        category: form.category, 
+        paymentMode: form.paymentMode,
+        attachments: finalAttachments.length > 0 ? finalAttachments : null,
+      });
+    } catch (err) {
+      alert('Failed to upload/save: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -1124,19 +1295,34 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
 
           {/* Category + Payment Mode */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Category</label>
                 <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
               </div>
-              <SearchSelectDropdown value={form.category} onChange={(v) => set('category', v)} placeholder="Select" suggestions={CATEGORY_SUGGESTIONS} />
+              <SearchSelectDropdown
+                value={form.category}
+                onChange={(v) => set('category', v)}
+                placeholder="Select"
+                suggestions={CATEGORY_SUGGESTIONS}
+                addLabel="Add New Category"
+                onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
+              />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Payment Mode</label>
                 <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
               </div>
-              <SearchSelectDropdown value={form.paymentMode} onChange={(v) => set('paymentMode', v)} placeholder="Select" fixedOptions={PAYMENT_FIXED} suggestions={PAYMENT_SUGGESTIONS} />
+              <SearchSelectDropdown
+                value={form.paymentMode}
+                onChange={(v) => set('paymentMode', v)}
+                placeholder="Select"
+                fixedOptions={PAYMENT_FIXED}
+                suggestions={PAYMENT_SUGGESTIONS}
+                addLabel="Add New Payment Mode"
+                onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
+              />
             </div>
           </div>
 
@@ -1144,14 +1330,57 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 8 }}>Attachments</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              <div
-                onClick={() => fileRef.current?.click()}
-                style={{ width: 64, height: 64, borderRadius: 8, border: '1.5px dashed var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--blue)', background: '#F0F4FF' }}
-              >
-                <Plus size={22} />
-              </div>
-              <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple style={{ display: 'none' }} />
+              {form.bills.map((file, idx) => {
+                const isFileObj = file instanceof File;
+                const name = isFileObj ? file.name : file.split('/').pop();
+                const isImg = isFileObj ? file.type.startsWith('image/') : name.match(/\.(jpeg|jpg|gif|png)$/i);
+                const previewUrl = isFileObj ? URL.createObjectURL(file) : file;
+                
+                return (
+                  <div key={idx} style={{ position: 'relative', width: 64, height: 64, border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewModalUrl(previewUrl)}>
+                    {isImg ? (
+                      <img src={previewUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="attachment" />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--gray-50)' }}>
+                        <FileText size={20} color="var(--gray-400)" />
+                        <span style={{ fontSize: 9, color: 'var(--gray-500)', marginTop: 4, maxWidth: 50, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        set('bills', form.bills.filter((_, i) => i !== idx));
+                      }}
+                      style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+              
+              {form.bills.length < 4 && (
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  style={{ width: 64, height: 64, borderRadius: 8, border: '1.5px dashed var(--blue)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--blue)', background: '#F0F4FF' }}
+                >
+                  <Plus size={20} />
+                  <span style={{ fontSize: 10, fontWeight: 500, marginTop: 4 }}>Add</span>
+                </div>
+              )}
             </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                set('bills', [...form.bills, ...files].slice(0, 4));
+                e.target.value = '';
+              }}
+            />
           </div>
         </div>
 
@@ -1174,6 +1403,29 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty }) 
             setShowAddParty(false);
           }}
           onClose={() => setShowAddParty(false)}
+        />
+      )}
+
+      {previewModalUrl && (
+        <FilePreviewModal url={previewModalUrl} onClose={() => setPreviewModalUrl(null)} />
+      )}
+
+      {promptState && (
+        <AddCustomFieldModal
+          title={promptState.title}
+          placeholder={promptState.placeholder}
+          initialValue={promptState.initialValue}
+          onSave={(val) => { 
+            if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val)) {
+              CATEGORY_SUGGESTIONS.push(val);
+            }
+            if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val)) {
+              PAYMENT_SUGGESTIONS.push(val);
+            }
+            set(promptState.type, val); 
+            setPromptState(null); 
+          }}
+          onClose={() => setPromptState(null)}
         />
       )}
     </>
@@ -1834,26 +2086,34 @@ export default function TransactionView() {
   const canEditDelete    = !myBookRole || ['Primary Admin', 'Book Admin'].includes(myBookRole);
   const canManageMembers = !myBookRole || isPrimaryAdmin || myBookRole === 'Book Admin';
 
-  /* Load transactions + parties from API */
-  useEffect(() => {
+  const fetchBookData = useCallback(async (showLoader = false) => {
     if (!bookId || !businessId) return;
-    setLoading(true);
-    Promise.all([
-      api.transactions.list(businessId, bookId),
-      api.parties.list(businessId, bookId),
-    ])
-      .then(([txnData, partyData]) => {
-        setTransactions(txnData.transactions.map((t) => ({
-          ...t,
-          amount: parseFloat(t.amount),
-          type: t.type,
-        })));
-        setMyBookRole(txnData.my_role || 'Primary Admin');
-        setBookParties(partyData.parties);
-      })
-      .catch((err) => console.error('[TransactionView] load failed:', err.message))
-      .finally(() => setLoading(false));
+    if (showLoader) setLoading(true);
+    try {
+      const [txnData, partyData] = await Promise.all([
+        api.transactions.list(businessId, bookId),
+        api.parties.list(businessId, bookId),
+      ]);
+      setTransactions(txnData.transactions.map((t) => ({
+        ...t,
+        amount: parseFloat(t.amount),
+        type: t.type,
+      })));
+      setMyBookRole(txnData.my_role || 'Primary Admin');
+      setBookParties(partyData.parties);
+    } catch (err) {
+      console.error('[TransactionView] load failed:', err.message);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
   }, [businessId, bookId]);
+
+  /* Load transactions + parties from API and poll every 5s */
+  useEffect(() => {
+    fetchBookData(true);
+    const intervalId = setInterval(() => fetchBookData(false), 5000);
+    return () => clearInterval(intervalId);
+  }, [fetchBookData]);
 
   /* "/" shortcut for search */
   useEffect(() => {
@@ -1879,6 +2139,7 @@ export default function TransactionView() {
         remarks: txn.remarks || null,
         category: txn.category || null,
         payment_mode: txn.paymentMode || null,
+        attachments: txn.attachments || null,
       });
       setTransactions((prev) => [{ ...transaction, amount: parseFloat(transaction.amount) }, ...prev]);
     } catch (err) {
@@ -1908,6 +2169,7 @@ export default function TransactionView() {
         remarks: txn.remarks || null,
         category: txn.category || null,
         payment_mode: txn.paymentMode || null,
+        attachments: txn.attachments || null,
       });
       setTransactions((prev) => prev.map((t) => t.id === txn.id ? { ...transaction, amount: parseFloat(transaction.amount) } : t));
     } catch (err) {
@@ -2274,14 +2536,33 @@ export default function TransactionView() {
                           {t.payment_mode || t.paymentMode || <span style={{ color: 'var(--gray-300)', fontWeight: 400 }}>—</span>}
                         </td>
                         <td style={{ padding: '10px 12px' }}>
-                          {t.bill_count > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
-                              <Paperclip size={12} color="var(--gray-400)" />
-                              <span>{t.bill_count} Attachment{t.bill_count > 1 ? 's' : ''}</span>
-                            </div>
-                          ) : (
-                            <Paperclip size={13} color="var(--gray-300)" />
-                          )}
+                          {(() => {
+                            let atts = [];
+                            try { atts = typeof t.attachments === 'string' ? JSON.parse(t.attachments) : (t.attachments || []); } catch {}
+                            if (atts.length > 0) {
+                              return (
+                                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                  {atts.map((file, i) => {
+                                    if (i > 2) return null;
+                                    const name = file.split('/').pop();
+                                    const isImg = name.match(/\.(jpeg|jpg|gif|png)$/i);
+                                    return (
+                                      <div 
+                                        key={i} 
+                                        onClick={(e) => { e.stopPropagation(); setPreviewModalUrl(file); }} 
+                                        style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--gray-200)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gray-50)' }}
+                                        title={name}
+                                      >
+                                        {isImg ? <img src={file} alt="bill" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FileText size={16} color="var(--blue)" />}
+                                      </div>
+                                    );
+                                  })}
+                                  {atts.length > 3 && <span style={{ fontSize: 12, color: 'var(--gray-500)', marginLeft: 4, fontWeight: 500 }}>+{atts.length - 3}</span>}
+                                </div>
+                              );
+                            }
+                            return <span style={{ color: 'var(--gray-300)' }}>—</span>;
+                          })()}
                         </td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <span style={{ fontSize: 13, fontWeight: 500, color: t.type === 'IN' ? '#16A34A' : '#DC2626' }}>
@@ -2341,6 +2622,8 @@ export default function TransactionView() {
           onClose={() => setEditTarget(null)}
           bookParties={bookParties}
           onAddParty={addParty}
+          businessId={businessId}
+          bookId={bookId}
         />
       )}
 
@@ -2353,6 +2636,8 @@ export default function TransactionView() {
           onClose={() => setShowEntry(false)}
           bookParties={bookParties.map((p) => p.name)}
           onAddParty={addParty}
+          businessId={businessId}
+          bookId={bookId}
         />
       )}
 

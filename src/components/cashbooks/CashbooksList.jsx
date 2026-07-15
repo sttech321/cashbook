@@ -328,7 +328,7 @@ const QUICK_BOOKS = ['June Expenses', 'Staff Salary', 'Cash Journal', 'Purchase 
 
 
 export default function CashbooksList() {
-  const { cashbooks, addCashbook, renameCashbook, currentBusiness } = useApp();
+  const { cashbooks, addCashbook, renameCashbook, currentBusiness, acceptCashbookInvite } = useApp();
   const { user } = useAuth();
   const { businessId } = useParams();
   const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
@@ -354,7 +354,10 @@ export default function CashbooksList() {
     'Last Created'
   ];
 
-  const filtered = cashbooks
+  const pendingInvites = cashbooks.filter((b) => b.my_invite_status === 'Pending');
+  const acceptedBooks = cashbooks.filter((b) => !b.my_invite_status || b.my_invite_status === 'Accepted');
+
+  const filtered = acceptedBooks
     .filter((b) => b.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
       switch (sortBy) {
@@ -465,6 +468,39 @@ export default function CashbooksList() {
             )}
           </div>
         </div>
+
+        {/* Pending Invites */}
+        {pendingInvites.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            {pendingInvites.map((book) => (
+              <div key={book.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px', background: '#F8FAFC', border: '1px solid #E2E8F0',
+                borderRadius: 8, marginBottom: 10
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', fontWeight: 600 }}>
+                    {(book.invited_by_name || 'U')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, color: '#334155' }}>
+                      <span style={{ fontWeight: 600, color: '#0F172A' }}>{book.invited_by_name || 'Someone'}</span> invites you in <span style={{ fontWeight: 600, color: '#0F172A' }}>{book.name}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+                      Role: {book.role || 'Data Operator'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => acceptCashbookInvite(book.id)}
+                  style={{ padding: '8px 16px', borderRadius: 6, background: '#2563EB', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none' }}
+                >
+                  Accept
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Book list */}
         {filtered.map((book) => (

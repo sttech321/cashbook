@@ -12,6 +12,17 @@ async function req(method, path, body) {
   return data;
 }
 
+async function uploadReq(path, formData) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
 // ── Businesses ──────────────────────────────────────────────
 export const api = {
   businesses: {
@@ -19,6 +30,7 @@ export const api = {
     create: (body) => req('POST', '/businesses', body),
     update: (id, body) => req('PATCH', `/businesses/${id}`, body),
     delete: (id) => req('DELETE', `/businesses/${id}`),
+    acceptInvite: (id) => req('POST', `/businesses/${id}/accept-invite`),
   },
 
   cashbooks: {
@@ -26,6 +38,7 @@ export const api = {
     create: (bizId, body) => req('POST', `/businesses/${bizId}/cashbooks`, body),
     rename: (bizId, bookId, name) => req('PATCH', `/businesses/${bizId}/cashbooks/${bookId}`, { name }),
     delete: (bizId, bookId) => req('DELETE', `/businesses/${bizId}/cashbooks/${bookId}`),
+    acceptInvite: (bizId, bookId) => req('POST', `/businesses/${bizId}/cashbooks/${bookId}/accept-invite`),
   },
 
   transactions: {
@@ -33,6 +46,7 @@ export const api = {
     create: (bizId, bookId, body) => req('POST', `/businesses/${bizId}/cashbooks/${bookId}/transactions`, body),
     update: (bizId, bookId, txnId, body) => req('PATCH', `/businesses/${bizId}/cashbooks/${bookId}/transactions/${txnId}`, body),
     delete: (bizId, bookId, txnId) => req('DELETE', `/businesses/${bizId}/cashbooks/${bookId}/transactions/${txnId}`),
+    uploadAttachments: (bizId, bookId, formData) => uploadReq(`/businesses/${bizId}/cashbooks/${bookId}/transactions/upload`, formData),
   },
 
   parties: {

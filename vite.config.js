@@ -95,6 +95,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/uploads': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 
@@ -104,6 +109,11 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
+        target: 'https://cashbook-backend-gres.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/uploads': {
         target: 'https://cashbook-backend-gres.onrender.com',
         changeOrigin: true,
         secure: true,

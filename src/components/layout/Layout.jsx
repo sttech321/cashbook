@@ -10,7 +10,7 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     if (businessId) setCurrentBusinessId(businessId);
-  }, [businessId]);
+  }, [businessId, setCurrentBusinessId]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--gray-50)' }}>

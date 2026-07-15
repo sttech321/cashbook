@@ -114,6 +114,11 @@ export function AppProvider({ children }) {
     setCashbooks((prev) => prev.filter((b) => b.id !== bookId));
   }, [currentBusinessId]);
 
+  const acceptCashbookInvite = useCallback(async (bookId) => {
+    await api.cashbooks.acceptInvite(currentBusinessId, bookId);
+    setCashbooks((prev) => prev.map((b) => b.id === bookId ? { ...b, my_invite_status: 'Accepted' } : b));
+  }, [currentBusinessId]);
+
   // ── Profile (kept local for now) ───────────────────────
   const currentProfile = profiles[currentBusinessId] || { ...DEFAULT_PROFILE };
   const filledFields = Object.values(currentProfile).filter((v) => v !== null && v !== '').length;
@@ -151,6 +156,7 @@ export function AppProvider({ children }) {
       addCashbook,
       renameCashbook,
       deleteCashbook,
+      acceptCashbookInvite,
       loadingBiz,
       loadingBooks,
       teamMembers: TEAM_MEMBERS,

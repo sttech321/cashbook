@@ -95,7 +95,9 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentBusiness } = useApp();
-  const isPrimaryAdmin = !currentBusiness?.my_role || currentBusiness?.my_role === 'Primary Admin';
+  const role = currentBusiness?.my_role || 'Primary Admin';
+  const isPrimaryAdmin = role === 'Primary Admin';
+  const canViewTeam = ['Primary Admin', 'Admin', 'Manager'].includes(role);
   const [collapsed, setCollapsed] = useState({
     upi: false,
     bookkeeping: false,
@@ -156,7 +158,7 @@ export default function Sidebar() {
         />
         {!collapsed.settings && (
           <>
-            {isPrimaryAdmin && (
+            {canViewTeam && (
               <NavItem
                 icon={Users}
                 label="Team"
