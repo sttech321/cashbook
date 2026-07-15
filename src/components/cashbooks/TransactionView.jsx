@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Settings, Users, Plus, Search, ChevronDown, X,
   Info, Calendar, Clock, Paperclip, Zap, FileText, CheckSquare,
+  Download, RotateCw, ZoomIn, ZoomOut, EyeOff, Trash2, MoreHorizontal,
+  CheckCircle2, Minus, Pencil,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
@@ -730,6 +732,188 @@ function FilePreviewModal({ url, onClose }) {
       ) : (
         <img src={url} style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8, boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} alt="Preview" />
       )}
+    </div>
+  );
+}
+
+/* ─── Attachment helpers ──────────────────────────────────────── */
+function parseAtts(t) {
+  if (!t?.attachments) return [];
+  try { return typeof t.attachments === 'string' ? JSON.parse(t.attachments) : (t.attachments || []); }
+  catch { return []; }
+}
+
+function panelDateTime(dateStr, createdAt) {
+  const d = new Date(createdAt || dateStr);
+  if (isNaN(d)) return '';
+  const date = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+  return `On ${date}, ${time}`;
+}
+
+/* ─── Full-size attachment preview (zoom / rotate / download) ──── */
+function AttachmentPreview({ url, panelWidth = 440, onClose }) {
+  const [zoom, setZoom] = useState(1);
+  const [rot, setRot] = useState(0);
+  useEffect(() => { setZoom(1); setRot(0); }, [url]);
+  if (!url) return null;
+
+  const name = url.split('/').pop();
+  const isPdf = url.toLowerCase().includes('.pdf');
+  const barBtn = { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', border: '1px solid var(--gray-200)', borderRadius: 8, background: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', textDecoration: 'none' };
+  const ctrlBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gray-700)', borderRadius: 6 };
+  const ctrlBox = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, border: '1px solid var(--gray-200)', borderRadius: 8, background: 'white', cursor: 'pointer', color: 'var(--gray-700)' };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: panelWidth, bottom: 0, background: '#fff', zIndex: 1100, display: 'flex', flexDirection: 'column', boxShadow: 'inset -1px 0 0 var(--gray-200)' }}>
+      {/* top bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--gray-200)' }}>
+        <button onClick={onClose} style={barBtn}><EyeOff size={16} /> Hide Preview</button>
+        <a href={url} download={name} target="_blank" rel="noreferrer" style={barBtn}><Download size={16} /> Attachment</a>
+      </div>
+
+      {/* image / pdf */}
+      <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: '#f6f7f9' }}>
+        {isPdf ? (
+          <iframe src={url} style={{ width: '100%', height: '100%', border: 'none', background: 'white' }} title="PDF Preview" />
+        ) : (
+          <img src={url} alt={name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', transform: `scale(${zoom}) rotate(${rot}deg)`, transition: 'transform 0.15s ease' }} />
+        )}
+      </div>
+
+      {/* bottom controls (images only) */}
+      {!isPdf && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 12, borderTop: '1px solid var(--gray-200)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--gray-200)', borderRadius: 8, padding: '4px 8px', background: 'white' }}>
+            <button onClick={() => setZoom((z) => Math.max(0.25, +(z - 0.25).toFixed(2)))} style={ctrlBtn} title="Zoom out"><Minus size={16} /></button>
+            <span style={{ fontSize: 13, minWidth: 46, textAlign: 'center', fontWeight: 600, color: 'var(--gray-700)' }}>{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))} style={ctrlBtn} title="Zoom in"><Plus size={16} /></button>
+          </div>
+          <button onClick={() => setRot((r) => (r + 90) % 360)} style={ctrlBox} title="Rotate"><RotateCw size={16} /></button>
+          <a href={url} download={name} target="_blank" rel="noreferrer" style={ctrlBox} title="Download"><Download size={16} /></a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Entry Details slide-in panel ────────────────────────────── */
+function EntryDetailsPanel({ txn, onClose, onEdit, onDelete, onMove, onCopy, user, canEditDelete }) {
+  const PANEL_W = 440;
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const isIn = txn.type === 'IN';
+  const accent = isIn ? '#16A34A' : '#DC2626';
+  const atts = parseAtts(txn);
+  const byName = txn.created_by === user?.id ? 'You' : (txn.created_by_name || 'Unknown');
+  const createdAtLabel = panelDateTime(txn.date, txn.created_at);
+  const updatedAtLabel = panelDateTime(txn.date, txn.updated_at || txn.created_at);
+
+  const label = { fontSize: 12, color: 'var(--gray-500)', fontWeight: 500, marginTop: 14 };
+  const val = { fontSize: 15, color: 'var(--gray-900)', fontWeight: 600, marginTop: 2 };
+  const tag = { fontSize: 12, fontWeight: 600, color: 'var(--blue)', background: '#EFF6FF', borderRadius: 6, padding: '4px 10px' };
+  const iconBtn = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', padding: 4 };
+  const footBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' };
+  const menuItem = { display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: 'white', cursor: 'pointer', fontSize: 13, color: 'var(--gray-700)' };
+
+  const ActivityRow = ({ icon, title, sub }) => (
+    <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', color: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 13, color: 'var(--gray-800)', fontWeight: 500 }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 1 }}>{sub}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
+      {/* backdrop */}
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)' }} />
+
+      {/* full-size preview (sits left of the panel) */}
+      {previewUrl && <AttachmentPreview url={previewUrl} panelWidth={PANEL_W} onClose={() => setPreviewUrl(null)} />}
+
+      {/* panel */}
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: PANEL_W, maxWidth: '100%', background: '#fff', boxShadow: '-4px 0 24px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', zIndex: 1101 }}>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--gray-900)' }}>Entry Details</span>
+          <button onClick={onClose} style={iconBtn}><X size={20} /></button>
+        </div>
+
+        {/* body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+          <div style={{ border: '1px solid var(--gray-200)', borderRadius: 12, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: accent, fontWeight: 600, fontSize: 14 }}>
+                {isIn ? <Plus size={16} /> : <Minus size={16} />} {isIn ? 'Cash In' : 'Cash Out'}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--gray-500)' }}>
+                {createdAtLabel} <CheckCircle2 size={16} color="#16A34A" />
+              </span>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: accent, marginTop: 8 }}>{formatAmount(txn.amount)}</div>
+
+            {txn.party && (<><div style={label}>Party Name</div><div style={val}>{txn.party}{txn.partyType ? ` (${txn.partyType})` : ''}</div></>)}
+            {txn.remarks && (<><div style={label}>Remark</div><div style={val}>{txn.remarks}</div></>)}
+
+            {atts.length > 0 && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+                {atts.map((f, i) => {
+                  const nm = f.split('/').pop();
+                  const isImg = /\.(jpe?g|png|gif|webp)$/i.test(nm);
+                  return (
+                    <div key={i} onClick={() => setPreviewUrl(f)} title={nm}
+                      style={{ width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--gray-200)', cursor: 'pointer', position: 'relative', background: 'var(--gray-50)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isImg ? <img src={f} alt={nm} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FileText size={24} color="var(--blue)" />}
+                      <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.55)', color: '#fff', fontSize: 9, padding: '1px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nm}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {(txn.category || txn.payment_mode || txn.paymentMode) && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                {txn.category && <span style={tag}>{txn.category}</span>}
+                {(txn.payment_mode || txn.paymentMode) && <span style={tag}>{txn.payment_mode || txn.paymentMode}</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Activities */}
+          <div style={{ marginTop: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gray-900)', marginBottom: 14 }}>Activities</div>
+            <ActivityRow icon={<Plus size={14} />} title={<>Created by <b style={{ fontWeight: 600 }}>{byName}</b></>} sub={createdAtLabel} />
+            <ActivityRow icon={<Pencil size={13} />} title={<>Last Updated by <b style={{ fontWeight: 600 }}>{byName}</b></>} sub={updatedAtLabel} />
+          </div>
+        </div>
+
+        {/* footer actions */}
+        {canEditDelete && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 16, borderTop: '1px solid var(--gray-100)' }}>
+            <button onClick={onDelete} style={{ ...footBtn, border: '1px solid #FCA5A5', background: 'white', color: '#DC2626' }}>
+              <Trash2 size={16} /> Delete
+            </button>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setMoreOpen((o) => !o)} style={{ ...footBtn, border: '1px solid var(--gray-200)', background: 'white', color: 'var(--gray-700)' }}>
+                More Actions <ChevronDown size={14} />
+              </button>
+              {moreOpen && (
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, background: '#fff', border: '1px solid var(--gray-200)', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', minWidth: 150, overflow: 'hidden', zIndex: 5 }}>
+                  <button onClick={() => { setMoreOpen(false); onMove(); }} style={menuItem} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'} onMouseLeave={(e) => e.currentTarget.style.background = 'white'}>Move Entry</button>
+                  <button onClick={() => { setMoreOpen(false); onCopy(); }} style={menuItem} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'} onMouseLeave={(e) => e.currentTarget.style.background = 'white'}>Copy Entry</button>
+                </div>
+              )}
+            </div>
+            <button onClick={onEdit} style={{ ...footBtn, border: 'none', background: 'var(--blue)', color: 'white', flex: 1 }}>
+              <Pencil size={15} /> Edit
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -2069,6 +2253,7 @@ export default function TransactionView() {
   const [copyTargets, setCopyTargets] = useState([]);
   const [editTarget, setEditTarget] = useState(null);
   const [hoveredRowId, setHoveredRowId] = useState(null);
+  const [detailTxn, setDetailTxn] = useState(null);
 
   /* filters */
   const [duration, setDuration] = useState('All Time');
@@ -2488,6 +2673,7 @@ export default function TransactionView() {
                     const isSelected = selectedRows.has(t.id);
                     return (
                       <tr key={t.id}
+                        onClick={() => setDetailTxn(t)}
                         onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--gray-50)'; setHoveredRowId(t.id); }}
                         onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; setHoveredRowId(null); }}
                         style={{ borderBottom: '1px solid var(--gray-100)', cursor: 'pointer', background: isSelected ? '#EFF6FF' : 'transparent' }}
@@ -2535,33 +2721,25 @@ export default function TransactionView() {
                         <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--blue)', whiteSpace: 'nowrap', fontWeight: 500 }}>
                           {t.payment_mode || t.paymentMode || <span style={{ color: 'var(--gray-300)', fontWeight: 400 }}>—</span>}
                         </td>
-                        <td style={{ padding: '10px 12px' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           {(() => {
-                            let atts = [];
-                            try { atts = typeof t.attachments === 'string' ? JSON.parse(t.attachments) : (t.attachments || []); } catch {}
-                            if (atts.length > 0) {
-                              return (
-                                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                  {atts.map((file, i) => {
-                                    if (i > 2) return null;
-                                    const name = file.split('/').pop();
-                                    const isImg = name.match(/\.(jpeg|jpg|gif|png)$/i);
-                                    return (
-                                      <div 
-                                        key={i} 
-                                        onClick={(e) => { e.stopPropagation(); setPreviewModalUrl(file); }} 
-                                        style={{ width: 32, height: 32, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--gray-200)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gray-50)' }}
-                                        title={name}
-                                      >
-                                        {isImg ? <img src={file} alt="bill" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <FileText size={16} color="var(--blue)" />}
-                                      </div>
-                                    );
-                                  })}
-                                  {atts.length > 3 && <span style={{ fontSize: 12, color: 'var(--gray-500)', marginLeft: 4, fontWeight: 500 }}>+{atts.length - 3}</span>}
-                                </div>
-                              );
-                            }
-                            return <span style={{ color: 'var(--gray-300)' }}>—</span>;
+                            const atts = parseAtts(t);
+                            if (atts.length === 0) return <span style={{ color: 'var(--gray-300)' }}>—</span>;
+                            return (
+                              <div
+                                onClick={(e) => { e.stopPropagation(); setDetailTxn(t); }}
+                                title="View attachments"
+                                style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2, cursor: 'pointer' }}
+                              >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--blue)' }}>
+                                  <Paperclip size={14} />
+                                  <span style={{ fontSize: 13, fontWeight: 600 }}>{atts.length}</span>
+                                </span>
+                                <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>
+                                  {atts.length === 1 ? 'Attachment' : 'Attachments'}
+                                </span>
+                              </div>
+                            );
                           })()}
                         </td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -2681,6 +2859,20 @@ export default function TransactionView() {
           businessId={businessId}
           onClose={() => setCopyTargets([])}
           onCopied={() => setCopyTargets([])}
+        />
+      )}
+
+      {/* ── Entry Details panel (view) ── */}
+      {detailTxn && (
+        <EntryDetailsPanel
+          txn={detailTxn}
+          user={user}
+          canEditDelete={canEditDelete}
+          onClose={() => setDetailTxn(null)}
+          onEdit={() => { setEditTarget(detailTxn); setDetailTxn(null); }}
+          onDelete={() => { setDeleteTargets([detailTxn]); setDetailTxn(null); }}
+          onMove={() => { setMoveTargets([detailTxn]); setDetailTxn(null); }}
+          onCopy={() => { setCopyTargets([detailTxn]); setDetailTxn(null); }}
         />
       )}
     </div>
