@@ -127,7 +127,9 @@ function AddFilterMenu({ available, onAdd, onClose }) {
 function AddTeamMemberPanel({ onClose, onInvite }) {
   /* ── Step 1 state ── */
   const [step, setStep]               = useState(1);
+  const [mode, setMode]               = useState('email'); // 'email' | 'mobile'
   const [email, setEmail]             = useState('');
+  const [mobile, setMobile]           = useState('');
   const [name, setName]               = useState('');
   const [userId, setUserId]           = useState(null);
   const [lookupState, setLookupState] = useState('idle'); // 'idle'|'checking'|'found'|'notfound'
@@ -139,7 +141,11 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
   const [empIdOpen, setEmpIdOpen]       = useState(false);
 
   const isValidEmail   = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canNext        = isValidEmail && name.trim().length > 0;
+  const mobileDigits   = mobile.replace(/\D/g, '').slice(-10);
+  const isValidMobile  = mobileDigits.length === 10;
+  const fullMobile     = mobileDigits ? `+91${mobileDigits}` : '';
+  const identifier     = mode === 'email' ? email.trim() : fullMobile;
+  const canNext        = (mode === 'email' ? isValidEmail : isValidMobile) && name.trim().length > 0;
   const isExistingUser = lookupState === 'found';
   const [submitError, setSubmitError] = useState(null);
 
@@ -160,10 +166,41 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
     }, 600);
   };
 
+  const handleMobileChange = (val) => {
+    setMobile(val);
+    setUserId(null);
+    setName('');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const digits = val.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10) { setLookupState('idle'); return; }
+    setLookupState('checking');
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const data = await api.users.lookupByMobile(`+91${digits}`);
+        if (data.found) { setName(data.user.name || ''); setUserId(data.user.id); setLookupState('found'); }
+        else             { setLookupState('notfound'); }
+      } catch { setLookupState('notfound'); }
+    }, 600);
+  };
+
+  const switchMode = (m) => {
+    if (m === mode) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setMode(m);
+    setEmail(''); setMobile(''); setName(''); setUserId(null); setLookupState('idle');
+  };
+
   const handleFinish = async () => {
     setSubmitError(null);
     try {
-      await onInvite({ name: name.trim(), email: email.trim(), role: selectedRole, user_id: userId, employee_id: empId || null });
+      await onInvite({
+        name: name.trim(),
+        email: mode === 'email' ? email.trim() : null,
+        mobile: mode === 'mobile' ? fullMobile : null,
+        role: selectedRole,
+        user_id: userId,
+        employee_id: empId || null,
+      });
       onClose();
     } catch (err) {
       setSubmitError(err.message || 'Failed to add member');
@@ -171,7 +208,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
   };
 
   /* Avatar */
-  const initial      = (name.trim() || email.trim() || '?').charAt(0).toUpperCase();
+  const initial      = (name.trim() || identifier || '?').charAt(0).toUpperCase();
   const AVATAR_BG    = ['#DBEAFE','#DCF3EB','#EDE9FE','#FEF3C7','#FCE7F3'];
   const AVATAR_TEXT  = ['#1D4ED8','#15803D','#6D28D9','#854D0E','#9D174D'];
   const colorIdx     = (initial.charCodeAt(0) || 0) % AVATAR_BG.length;
@@ -217,7 +254,19 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
 
               {/* Body */}
               <div style={{ padding: '4px 24px 24px', overflowY: 'auto', flex: 1 }}>
+                {/* Email / Mobile toggle */}
+                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 8, padding: 3, marginBottom: 16 }}>
+                  {[{ k: 'email', label: 'Email' }, { k: 'mobile', label: 'Mobile' }].map(({ k, label }) => (
+                    <button key={k} onClick={() => switchMode(k)}
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: mode === k ? 600 : 500,
+                        background: mode === k ? '#2563EB' : 'transparent', color: mode === k ? '#fff' : '#6B7280', transition: 'all 150ms' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Email card */}
+                {mode === 'email' && (
                 <div style={{ border: `1px solid ${lookupState === 'found' ? '#22C55E' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px', marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 10 }}>
                     Enter Email Address <span style={{ color: '#DC2626' }}>*</span>
@@ -252,6 +301,50 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                     </div>
                   )}
                 </div>
+                )}
+
+                {/* Mobile card */}
+                {mode === 'mobile' && (
+                <div style={{ border: `1px solid ${lookupState === 'found' ? '#22C55E' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 10 }}>
+                    Enter Mobile Number <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', border: '1px solid var(--gray-200)', borderRadius: 7, fontSize: 14, color: '#374151', background: '#fff', flexShrink: 0 }}>
+                      🇮🇳 +91
+                    </div>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <input autoFocus type="tel" value={mobile}
+                        onChange={e => handleMobileChange(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && canNext) setStep(2); }}
+                        placeholder="e.g. 8772321230"
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '10px 36px 10px 12px', border: `1px solid ${lookupState === 'found' ? '#22C55E' : 'var(--gray-200)'}`, borderRadius: 7, fontSize: 14, color: '#111827', outline: 'none', background: '#fff', transition: 'border-color 150ms' }}
+                      />
+                      {lookupState === 'checking' && (
+                        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite', display: 'block' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        </div>
+                      )}
+                      {lookupState === 'found' && (
+                        <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {lookupState === 'checking' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#6B7280' }}>
+                      <span>Checking if user exists...</span>
+                    </div>
+                  )}
+                  {lookupState === 'found' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12, color: '#16A34A', fontWeight: 500 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      CashBook user found! Name auto-filled.
+                    </div>
+                  )}
+                </div>
+                )}
 
                 {/* Name card */}
                 <div style={{ border: `1px solid ${lookupState === 'found' ? '#D1FAE5' : 'var(--gray-200)'}`, borderRadius: 10, padding: '16px' }}>
@@ -304,7 +397,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                 <p style={{ fontSize: 13, color: '#374151', marginBottom: 16, lineHeight: 1.6 }}>
                   {isExistingUser
                     ? <><strong>{name}</strong> is already using CashBook app. Choose their role in this business and add</>
-                    : <><strong>{email}</strong> is a new user. Send invite to <strong>{email}</strong> to join this business</>
+                    : <><strong>{name || identifier}</strong> is a new user. Send invite to <strong>{identifier}</strong> to join this business</>
                   }
                 </p>
 
@@ -315,7 +408,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{name}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{email}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{identifier}</div>
                   </div>
                   <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: isExistingUser ? '#DBEAFE' : '#F3F4F6', color: isExistingUser ? '#1D4ED8' : '#6B7280', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     {isExistingUser ? 'CashBook User' : 'Not a CashBook User'}
@@ -392,7 +485,7 @@ function AddTeamMemberPanel({ onClose, onInvite }) {
               {/* Footer */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 24px', borderTop: '1px solid var(--gray-100)', flexShrink: 0 }}>
                 <button onClick={() => setStep(1)} style={{ padding: '9px 0', border: 'none', background: 'none', fontSize: 14, fontWeight: 500, color: '#374151', cursor: 'pointer' }}>
-                  Change Email
+                  {mode === 'email' ? 'Change Email' : 'Change Mobile Number'}
                 </button>
                 <button onClick={handleFinish}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 22px', borderRadius: 7, background: 'var(--blue)', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
@@ -1978,9 +2071,10 @@ export default function TeamPage() {
       .finally(() => setLoading(false));
   }, [currentBusinessId]);
 
-  // Update a member field both on API and in local state
+  // Update a member field both on API and in local state.
+  // Owner (Primary Admin) can edit only their own Employee ID — the backend
+  // stores it on the user record and ignores role/reports_to for the owner.
   const updateMemberField = async (member, fields) => {
-    if (member.is_owner) return;
     await api.team.update(currentBusinessId, member.id, fields).catch(() => {});
     setMembers(prev => prev.map(m => m.id === member.id ? { ...m, ...fields } : m));
     if (selectedMember?.id === member.id) setSelectedMember(prev => ({ ...prev, ...fields }));

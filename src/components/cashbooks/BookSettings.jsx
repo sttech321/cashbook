@@ -388,7 +388,11 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
 
   const isValidEmail  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isValidMobile = /^\d{10}$/.test(mobile.trim());
-  const canNext       = lookupState === 'found';
+  const validInput    = inputMode === 'email' ? isValidEmail : isValidMobile;
+  const isNewUser     = lookupState === 'notfound';
+  // Allow an existing user (found) OR inviting a brand-new user once a name is typed
+  // — same validation/logic as the Team page "Add New Member" flow.
+  const canNext       = lookupState === 'found' || (isNewUser && validInput && name.trim().length > 0);
 
   const resetLookup = () => { setUserId(null); setName(''); setLookupState('idle'); };
 
@@ -458,7 +462,7 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
   // Icon helpers
   const SpinIcon  = () => <div style={{ width: 14, height: 14, border: '2px solid #E5E7EB', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />;
   const OkIcon    = () => <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>;
-  const inputBorder = (valid) => lookupState === 'found' ? '#16A34A' : lookupState === 'notfound' ? '#DC2626' : valid ? 'var(--blue)' : 'var(--gray-200)';
+  const inputBorder = (valid) => lookupState === 'found' ? '#16A34A' : valid ? 'var(--blue)' : 'var(--gray-200)';
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 900 }} onClick={onClose}>
@@ -501,11 +505,10 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
                     <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
                       {lookupState === 'checking' && <SpinIcon />}
                       {lookupState === 'found'    && <OkIcon />}
-                      {lookupState === 'notfound' && <X size={14} color="#DC2626" />}
                     </div>
                   </div>
                   {lookupState === 'found'    && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
-                  {lookupState === 'notfound' && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 5 }}>No CashBook user found with this email.</div>}
+                  {lookupState === 'notfound' && <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 5 }}>Not a CashBook user — enter a name below to send an invite.</div>}
                 </div>
               )}
 
@@ -527,12 +530,11 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
                       <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
                         {lookupState === 'checking' && <SpinIcon />}
                         {lookupState === 'found'    && <OkIcon />}
-                        {lookupState === 'notfound' && <X size={14} color="#DC2626" />}
-                      </div>
+                        </div>
                     </div>
                   </div>
                   {lookupState === 'found'    && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
-                  {lookupState === 'notfound' && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 5 }}>No CashBook user found with this mobile number.</div>}
+                  {lookupState === 'notfound' && <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 5 }}>Not a CashBook user — enter a name below to send an invite.</div>}
                 </div>
               )}
 
@@ -542,6 +544,16 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
                   <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Name</label>
                   <input readOnly value={name}
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #16A34A', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#F0FDF4', color: 'var(--gray-800)', cursor: 'default' }}
+                  />
+                </div>
+              )}
+              {isNewUser && (
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: 8 }}>Enter Name</label>
+                  <input value={name} onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && canNext) handleNext(); }}
+                    placeholder="Type the name of the member here"
+                    style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--gray-200)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
               )}

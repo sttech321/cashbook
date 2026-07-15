@@ -169,7 +169,7 @@ export default function Sidebar() {
             <NavItem
               icon={Settings}
               label="Business Settings"
-              active={is('/settings')}
+              active={is('/settings') && !is('/cashbooks')}
               onClick={() => go(`/businesses/${bid}/settings`)}
             />
           </>
