@@ -41,11 +41,11 @@ function SelectCard({ label, icon, selected, onClick }) {
 /* ─── Main Onboarding Page ──────────────────────────────────── */
 export default function OnboardingPage() {
   const { businesses, addBusiness, loadingBiz, currentBusinessId } = useApp();
-  const { updateUser, token } = useAuth();
+  const { updateUser, token, user } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(null); // null=loading, 'done', 'details', 'category', 'type'
-  const [fullName, setFullName] = useState('');
+  const [fullName, setFullName] = useState(user?.name || '');
   const [bizName, setBizName] = useState('');
   const [category, setCategory] = useState('');
   const [bizType, setBizType] = useState('');

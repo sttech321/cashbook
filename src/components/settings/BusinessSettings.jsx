@@ -692,7 +692,7 @@ export default function BusinessSettings() {
                 onClose={() => setShowDeleteModal(false)}
                 onDelete={async () => {
                   await deleteBusiness();
-                  navigate('/add-first-business');
+                  navigate('/onboarding');
                 }}
               />
             )}

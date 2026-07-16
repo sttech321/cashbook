@@ -141,7 +141,7 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated) navigate('/add-first-business', { replace: true });
+    if (isAuthenticated) navigate('/onboarding', { replace: true });
   }, [isAuthenticated, navigate]);
 
   // Auto-advance slides
@@ -209,7 +209,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || 'OTP verification failed');
 
       login(data.user);
-      navigate('/add-first-business', { replace: true });
+      navigate('/onboarding', { replace: true });
     } catch (err) {
       setError(err.message);
       setOtp('');

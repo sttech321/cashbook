@@ -510,7 +510,7 @@ function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select
                 onMouseEnter={(e) => e.currentTarget.style.background = '#DCFCE7'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#F0FDF4'}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                 {importLabel}
               </button>
             )}
@@ -721,7 +721,7 @@ function AddCustomFieldModal({ title, placeholder, initialValue, onSave, onClose
 function FilePreviewModal({ url, onClose }) {
   if (!url) return null;
   const isPdf = url.toLowerCase().includes('.pdf');
-  
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
       <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', padding: 10, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}>
@@ -952,14 +952,14 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
       let uploadedUrls = [];
       const newFiles = form.bills.filter(f => f instanceof File);
       const existingUrls = form.bills.filter(f => typeof f === 'string');
-      
+
       if (newFiles.length > 0) {
         const formData = new FormData();
         newFiles.forEach(f => formData.append('attachments', f));
         const res = await api.transactions.uploadAttachments(businessId, bookId, formData);
         uploadedUrls = res.urls || [];
       }
-      
+
       const finalAttachments = [...existingUrls, ...uploadedUrls];
 
       await onSave({
@@ -991,8 +991,8 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 400 }} onClick={onClose} />
       {/* Panel */}
       <div style={{
-        position: 'fixed', top: 'var(--topbar-height)', right: 0, bottom: 0,
-        width: 420, background: 'var(--white)', zIndex: 500,
+        position: 'fixed', top: 0, right: 0, bottom: 0,
+        width: 550, background: 'var(--white)', zIndex: 500,
         display: 'flex', flexDirection: 'column',
         boxShadow: '-4px 0 24px rgba(0,0,0,0.14)',
       }}>
@@ -1195,7 +1195,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               )}
             </button>
             <div style={{ fontSize: 12, color: '#16A34A', paddingLeft: 14 }}>Attach up to 4 images or PDF files</div>
-            
+
             {/* Attachment Previews */}
             {form.bills.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingLeft: 14 }}>
@@ -1204,7 +1204,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
                   const name = isFileObj ? file.name : file.split('/').pop();
                   const isImg = isFileObj ? file.type.startsWith('image/') : name.match(/\.(jpeg|jpg|gif|png)$/i);
                   const previewUrl = isFileObj ? URL.createObjectURL(file) : file;
-                  
+
                   return (
                     <div key={idx} style={{ position: 'relative', width: 60, height: 60, border: '1px solid var(--gray-200)', borderRadius: 6, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewModalUrl(previewUrl)}>
                       {isImg ? (
@@ -1305,15 +1305,15 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
           title={promptState.title}
           placeholder={promptState.placeholder}
           initialValue={promptState.initialValue}
-          onSave={(val) => { 
+          onSave={(val) => {
             if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val)) {
               CATEGORY_SUGGESTIONS.push(val);
             }
             if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val)) {
               PAYMENT_SUGGESTIONS.push(val);
             }
-            set(promptState.type, val); 
-            setPromptState(null); 
+            set(promptState.type, val);
+            setPromptState(null);
           }}
           onClose={() => setPromptState(null)}
         />
@@ -1361,24 +1361,24 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
       let uploadedUrls = [];
       const newFiles = form.bills.filter(f => f instanceof File);
       const existingUrls = form.bills.filter(f => typeof f === 'string');
-      
+
       if (newFiles.length > 0) {
         const formData = new FormData();
         newFiles.forEach(f => formData.append('attachments', f));
         const res = await api.transactions.uploadAttachments(businessId, bookId, formData);
         uploadedUrls = res.urls || [];
       }
-      
+
       const finalAttachments = [...existingUrls, ...uploadedUrls];
 
-      await onSave({ 
-        id: txn.id, 
-        type, 
-        amount: parseFloat(form.amount), 
-        date: form.date, 
-        party: form.party, 
-        remarks: form.remarks, 
-        category: form.category, 
+      await onSave({
+        id: txn.id,
+        type,
+        amount: parseFloat(form.amount),
+        date: form.date,
+        party: form.party,
+        remarks: form.remarks,
+        category: form.category,
         paymentMode: form.paymentMode,
         attachments: finalAttachments.length > 0 ? finalAttachments : null,
       });
@@ -1392,7 +1392,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
   return (
     <>
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 400 }} onClick={onClose} />
-      <div style={{ position: 'fixed', top: 'var(--topbar-height)', right: 0, bottom: 0, width: 420, background: 'var(--white)', zIndex: 500, display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.14)' }}>
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 550, background: 'var(--white)', zIndex: 500, display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.14)' }}>
 
         {/* Header */}
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--gray-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -1519,7 +1519,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
                 const name = isFileObj ? file.name : file.split('/').pop();
                 const isImg = isFileObj ? file.type.startsWith('image/') : name.match(/\.(jpeg|jpg|gif|png)$/i);
                 const previewUrl = isFileObj ? URL.createObjectURL(file) : file;
-                
+
                 return (
                   <div key={idx} style={{ position: 'relative', width: 64, height: 64, border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewModalUrl(previewUrl)}>
                     {isImg ? (
@@ -1542,7 +1542,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
                   </div>
                 );
               })}
-              
+
               {form.bills.length < 4 && (
                 <div
                   onClick={() => fileRef.current?.click()}
@@ -1599,15 +1599,15 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
           title={promptState.title}
           placeholder={promptState.placeholder}
           initialValue={promptState.initialValue}
-          onSave={(val) => { 
+          onSave={(val) => {
             if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val)) {
               CATEGORY_SUGGESTIONS.push(val);
             }
             if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val)) {
               PAYMENT_SUGGESTIONS.push(val);
             }
-            set(promptState.type, val); 
-            setPromptState(null); 
+            set(promptState.type, val);
+            setPromptState(null);
           }}
           onClose={() => setPromptState(null)}
         />
@@ -1649,9 +1649,9 @@ function DeleteConfirmModal({ txns, onConfirm, onClose }) {
             background: '#FFF7ED', border: '1px solid #FED7AA', marginBottom: 18,
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="#FDBA74" stroke="#F97316" strokeWidth="1.5"/>
-              <line x1="12" y1="9" x2="12" y2="13" stroke="#9A3412" strokeWidth="1.8" strokeLinecap="round"/>
-              <circle cx="12" cy="16.5" r="0.8" fill="#9A3412"/>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="#FDBA74" stroke="#F97316" strokeWidth="1.5" />
+              <line x1="12" y1="9" x2="12" y2="13" stroke="#9A3412" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="12" cy="16.5" r="0.8" fill="#9A3412" />
             </svg>
             <span style={{ fontSize: 13, color: '#9A3412', lineHeight: 1.55 }}>
               Once deleted, {txns.length > 1 ? 'these entries' : 'this entry'} <strong>cannot be restored.</strong><br />
@@ -1703,7 +1703,7 @@ function DeleteConfirmModal({ txns, onConfirm, onClose }) {
             onMouseLeave={(e) => e.currentTarget.style.background = 'var(--white)'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
             </svg>
             Yes, Delete
           </button>
@@ -1783,7 +1783,7 @@ function fmtBookDate(dateStr) {
   const d = new Date(dateStr);
   if (d.toDateString() === new Date().toDateString()) return 'Today';
   const day = d.getDate();
-  const suf = [11,12,13].includes(day) ? 'th' : ['st','nd','rd'][((day % 10) - 1)] || 'th';
+  const suf = [11, 12, 13].includes(day) ? 'th' : ['st', 'nd', 'rd'][((day % 10) - 1)] || 'th';
   return `${d.toLocaleString('en-IN', { month: 'long' })} ${day}${suf} ${d.getFullYear()}`;
 }
 
@@ -2152,32 +2152,32 @@ function SelectionBar({ selectedCount, allSelected, onSelectAll, onDeselectAll, 
   const moveOrCopyItems = [
     {
       label: 'Move Entry',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>,
       onClick: onMoveEntry,
     },
     {
       label: 'Copy Entry',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
       onClick: onCopyEntry,
     },
     {
       label: 'Copy Opposite Entry',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
     },
   ];
 
   const changeFieldItems = [
     {
       label: 'Change Category',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>,
     },
     {
       label: 'Change Payment Mode',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>,
     },
     {
       label: 'Change Party',
-      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+      icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
     },
   ];
 
@@ -2211,7 +2211,7 @@ function SelectionBar({ selectedCount, allSelected, onSelectAll, onDeselectAll, 
         onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--white)'; }}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
         </svg>
         Delete
       </button>
@@ -2219,14 +2219,14 @@ function SelectionBar({ selectedCount, allSelected, onSelectAll, onDeselectAll, 
       {/* Move or Copy */}
       <ActionDropdown
         label="Move or Copy"
-        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
+        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>}
         items={moveOrCopyItems}
       />
 
       {/* Change Fields */}
       <ActionDropdown
         label="Change Fields"
-        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>}
+        icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" /></svg>}
         items={changeFieldItems}
       />
     </div>
@@ -2267,8 +2267,8 @@ export default function TransactionView() {
   const searchRef = useRef(null);
 
   // Book-level permissions derived from my_role returned by the transactions API
-  const canWrite         = !myBookRole || ['Primary Admin', 'Data Operator', 'Book Admin'].includes(myBookRole);
-  const canEditDelete    = !myBookRole || ['Primary Admin', 'Book Admin'].includes(myBookRole);
+  const canWrite = !myBookRole || ['Primary Admin', 'Data Operator', 'Book Admin'].includes(myBookRole);
+  const canEditDelete = !myBookRole || ['Primary Admin', 'Book Admin'].includes(myBookRole);
   const canManageMembers = !myBookRole || isPrimaryAdmin || myBookRole === 'Book Admin';
 
   const fetchBookData = useCallback(async (showLoader = false) => {
@@ -2763,8 +2763,8 @@ export default function TransactionView() {
                                 title="Edit"
                               >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
                               </button>
                               <button
@@ -2775,8 +2775,8 @@ export default function TransactionView() {
                                 title="Delete"
                               >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                                  <path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                  <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                                 </svg>
                               </button>
                             </div>
@@ -2826,7 +2826,7 @@ export default function TransactionView() {
           onClose={() => setDeleteTargets([])}
           onConfirm={async () => {
             const ids = deleteTargets.map((t) => t.id);
-            await Promise.all(ids.map((id) => api.transactions.delete(businessId, bookId, id).catch(() => {})));
+            await Promise.all(ids.map((id) => api.transactions.delete(businessId, bookId, id).catch(() => { })));
             setTransactions((prev) => prev.filter((t) => !ids.includes(t.id)));
             setSelectedRows((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next; });
             setDeleteTargets([]);
