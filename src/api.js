@@ -41,7 +41,11 @@ export const api = {
     acceptInvite: (bizId, bookId) => req('POST', `/businesses/${bizId}/cashbooks/${bookId}/accept-invite`),
     getSettings: (bizId, bookId) => req('GET', `/businesses/${bizId}/cashbooks/${bookId}/settings`),
     addCategory: (bizId, bookId, name) => req('POST', `/businesses/${bizId}/cashbooks/${bookId}/categories`, { name }),
+    renameCategory: (bizId, bookId, id, name) => req('PATCH', `/businesses/${bizId}/cashbooks/${bookId}/categories/${id}`, { name }),
+    deleteCategory: (bizId, bookId, id) => req('DELETE', `/businesses/${bizId}/cashbooks/${bookId}/categories/${id}`),
     addPaymentMode: (bizId, bookId, name) => req('POST', `/businesses/${bizId}/cashbooks/${bookId}/payment-modes`, { name }),
+    renamePaymentMode: (bizId, bookId, id, name) => req('PATCH', `/businesses/${bizId}/cashbooks/${bookId}/payment-modes/${id}`, { name }),
+    deletePaymentMode: (bizId, bookId, id) => req('DELETE', `/businesses/${bizId}/cashbooks/${bookId}/payment-modes/${id}`),
   },
 
   transactions: {

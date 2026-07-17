@@ -240,6 +240,59 @@ function DeleteBookModal({ bookName, onDelete, onClose }) {
   );
 }
 
+/* ─── Rename Field Modal ─────────────────────────────────────── */
+function RenameFieldModal({ type, initialName, onUpdate, onClose }) {
+  const [name, setName] = useState(initialName || '');
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
+      <div style={{ background: 'var(--white)', borderRadius: 12, width: 380, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Rename {type}</span>
+          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+        </div>
+        <div style={{ padding: '20px' }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 8 }}>{type} Name</label>
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--blue)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '12px 20px', borderTop: '1px solid var(--gray-100)', justifyContent: 'flex-end' }}>
+          <button onClick={() => { if (name.trim()) { onUpdate(name.trim()); onClose(); } }} style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Update</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Delete Field Modal ─────────────────────────────────────── */
+function DeleteFieldModal({ type, name, count, onDelete, onClose }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
+      <div style={{ background: 'var(--white)', borderRadius: 12, width: 380, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Delete {type} ?</span>
+          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+        </div>
+        <div style={{ padding: '20px' }}>
+          <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 6, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16 }}>
+            <TriangleAlert size={16} color="#EA580C" style={{ flexShrink: 0, marginTop: 2 }} />
+            <span style={{ fontSize: 13, color: '#9A3412', lineHeight: 1.4, fontWeight: 500 }}>Are you sure? This cannot be undone</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--gray-800)' }}>
+            <Info size={16} color="var(--gray-500)" />
+            {count === 0 ? `No entries are tagged with "${name}" ${type.toLowerCase()}` : `${count} entries are tagged with "${name}" ${type.toLowerCase()}`}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '12px 20px', borderTop: '1px solid var(--gray-100)', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--blue)', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
+          <button onClick={() => { onDelete(); onClose(); }} style={{ padding: '8px 18px', borderRadius: 6, border: '1px solid #DC2626', background: 'var(--white)', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Trash2 size={14} /> Yes, Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 /* ─── Duplicate Book modal ──────────────────────────────────── */
 function DuplicateBookModal({ book, onClose, onDuplicate }) {
   const [name, setName] = useState('');
@@ -1373,8 +1426,17 @@ export default function BookSettings() {
     localStorage.setItem(FS_KEY, JSON.stringify(nextSettings));
   };
   const [parties, setParties] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [paymentModes, setPaymentModes] = useState([]);
+  const [categories, setCategories] = useState([]); // array of objects { id, name }
+  const [paymentModes, setPaymentModes] = useState([]); // array of objects { id, name }
+  const [transactions, setTransactions] = useState([]);
+
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [deletingCategory, setDeletingCategory] = useState(null);
+  const [openCategoryMenu, setOpenCategoryMenu] = useState(null);
+
+  const [editingPaymentMode, setEditingPaymentMode] = useState(null);
+  const [deletingPaymentMode, setDeletingPaymentMode] = useState(null);
+  const [openPaymentModeMenu, setOpenPaymentModeMenu] = useState(null);
 
   /* custom fields — persisted per book in localStorage */
   const LS_KEY = `cashbook_custom_fields_${bookId}`;
@@ -1436,13 +1498,17 @@ export default function BookSettings() {
       .catch(() => { });
   }, [showAddPanel, businessId]);
 
-  // Load custom categories
+  // Load custom categories and transactions
   const loadSettings = useCallback(async () => {
     if (!businessId || !bookId) return;
     try {
-      const { categories: customCats, paymentModes: customPMs } = await api.cashbooks.getSettings(businessId, bookId);
-      setCategories(customCats.map(c => c.name));
-      setPaymentModes(customPMs ? customPMs.map(p => p.name) : []);
+      const [settingsRes, txnsRes] = await Promise.all([
+        api.cashbooks.getSettings(businessId, bookId),
+        api.transactions.list(businessId, bookId).catch(() => ({ transactions: [] }))
+      ]);
+      setCategories(settingsRes.categories || []);
+      setPaymentModes(settingsRes.paymentModes || []);
+      setTransactions(txnsRes.transactions || []);
     } catch (err) {
       console.error(err);
     }
@@ -1454,8 +1520,8 @@ export default function BookSettings() {
 
   const handleAddCustomCategory = async (name) => {
     try {
-      await api.cashbooks.addCategory(businessId, bookId, name);
-      setCategories(prev => [...prev, name]);
+      const res = await api.cashbooks.addCategory(businessId, bookId, name);
+      setCategories(prev => [...prev, res.category]);
       setToast('Category added successfully');
     } catch (err) {
       setToast('Failed to add category');
@@ -1464,11 +1530,53 @@ export default function BookSettings() {
 
   const handleAddCustomPaymentMode = async (name) => {
     try {
-      await api.cashbooks.addPaymentMode(businessId, bookId, name);
-      setPaymentModes(prev => [...prev, name]);
+      const res = await api.cashbooks.addPaymentMode(businessId, bookId, name);
+      setPaymentModes(prev => [...prev, res.paymentMode]);
       setToast('Payment mode added successfully');
     } catch (err) {
       setToast('Failed to add payment mode');
+    }
+  };
+
+  const handleRenameCategory = async (id, newName) => {
+    try {
+      const res = await api.cashbooks.renameCategory(businessId, bookId, id, newName);
+      setCategories(prev => prev.map(c => c.id === id ? res.category : c));
+      setTransactions(prev => prev.map(t => t.category === categories.find(c => c.id === id)?.name ? { ...t, category: newName } : t));
+      setToast('Category renamed');
+    } catch (err) {
+      setToast(err.message || 'Failed to rename category');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      await api.cashbooks.deleteCategory(businessId, bookId, id);
+      setCategories(prev => prev.filter(c => c.id !== id));
+      setToast('Category deleted');
+    } catch (err) {
+      setToast(err.message || 'Failed to delete category');
+    }
+  };
+
+  const handleRenamePaymentMode = async (id, newName) => {
+    try {
+      const res = await api.cashbooks.renamePaymentMode(businessId, bookId, id, newName);
+      setPaymentModes(prev => prev.map(p => p.id === id ? res.paymentMode : p));
+      setTransactions(prev => prev.map(t => t.payment_mode === paymentModes.find(p => p.id === id)?.name ? { ...t, payment_mode: newName } : t));
+      setToast('Payment mode renamed');
+    } catch (err) {
+      setToast(err.message || 'Failed to rename payment mode');
+    }
+  };
+
+  const handleDeletePaymentMode = async (id) => {
+    try {
+      await api.cashbooks.deletePaymentMode(businessId, bookId, id);
+      setPaymentModes(prev => prev.filter(p => p.id !== id));
+      setToast('Payment mode deleted');
+    } catch (err) {
+      setToast(err.message || 'Failed to delete payment mode');
     }
   };
 
@@ -1841,11 +1949,23 @@ export default function BookSettings() {
                       )}
 
                       {categories.length > 0 && (
-                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, marginBottom: 16 }}>
                           {categories.map((c, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < categories.length - 1 ? '1px solid var(--gray-100)' : 'none', background: 'var(--white)' }}>
-                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{c}</span>
-                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center' }}><MoreVertical size={16} /></button>
+                            <div key={c.id || i} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px',
+                              borderBottom: i < categories.length - 1 ? '1px solid var(--gray-100)' : 'none',
+                              background: 'var(--white)', position: 'relative',
+                              borderTopLeftRadius: i === 0 ? 8 : 0, borderTopRightRadius: i === 0 ? 8 : 0,
+                              borderBottomLeftRadius: i === categories.length - 1 ? 8 : 0, borderBottomRightRadius: i === categories.length - 1 ? 8 : 0,
+                            }}>
+                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{c.name}</span>
+                              <button onClick={() => setOpenCategoryMenu(openCategoryMenu === c.id ? null : c.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', padding: 4 }}><MoreVertical size={16} /></button>
+                              {openCategoryMenu === c.id && (
+                                <div style={{ position: 'absolute', right: 16, top: 40, background: 'var(--white)', border: '1px solid var(--gray-200)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 120, overflow: 'hidden' }}>
+                                  <button onClick={() => { setEditingCategory(c); setOpenCategoryMenu(null); }} style={{ width: '100%', padding: '10px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>Rename</button>
+                                  <button onClick={() => { setDeletingCategory(c); setOpenCategoryMenu(null); }} style={{ width: '100%', padding: '10px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: '#DC2626', borderTop: '1px solid var(--gray-100)' }}>Delete</button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1889,11 +2009,23 @@ export default function BookSettings() {
                       )}
 
                       {paymentModes.length > 0 && (
-                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, marginBottom: 16 }}>
                           {paymentModes.map((p, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < paymentModes.length - 1 ? '1px solid var(--gray-100)' : 'none', background: 'var(--white)' }}>
-                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{p}</span>
-                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center' }}><MoreVertical size={16} /></button>
+                            <div key={p.id || i} style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px',
+                              borderBottom: i < paymentModes.length - 1 ? '1px solid var(--gray-100)' : 'none',
+                              background: 'var(--white)', position: 'relative',
+                              borderTopLeftRadius: i === 0 ? 8 : 0, borderTopRightRadius: i === 0 ? 8 : 0,
+                              borderBottomLeftRadius: i === paymentModes.length - 1 ? 8 : 0, borderBottomRightRadius: i === paymentModes.length - 1 ? 8 : 0,
+                            }}>
+                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{p.name}</span>
+                              <button onClick={() => setOpenPaymentModeMenu(openPaymentModeMenu === p.id ? null : p.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', padding: 4 }}><MoreVertical size={16} /></button>
+                              {openPaymentModeMenu === p.id && (
+                                <div style={{ position: 'absolute', right: 16, top: 40, background: 'var(--white)', border: '1px solid var(--gray-200)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 120, overflow: 'hidden' }}>
+                                  <button onClick={() => { setEditingPaymentMode(p); setOpenPaymentModeMenu(null); }} style={{ width: '100%', padding: '10px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>Rename</button>
+                                  <button onClick={() => { setDeletingPaymentMode(p); setOpenPaymentModeMenu(null); }} style={{ width: '100%', padding: '10px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: '#DC2626', borderTop: '1px solid var(--gray-100)' }}>Delete</button>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -2009,6 +2141,11 @@ export default function BookSettings() {
       {modal === 'add-payment-mode' && <AddPaymentModeModal onAdd={handleAddCustomPaymentMode} onClose={() => setModal(null)} />}
       {modal === 'add-custom-field' && <AddCustomFieldModal initialData={editingCustomField} onAdd={(cf) => saveCustomFields(customFields.some(x => x.id === cf.id) ? customFields.map(x => x.id === cf.id ? cf : x) : [...customFields, cf])} onClose={() => { setModal(null); setEditingCustomField(null); }} />}
       {modal === 'delete-custom-field' && <DeleteCustomFieldModal customField={deletingCustomField} onDelete={() => saveCustomFields(customFields.filter(x => x.id !== deletingCustomField.id))} onClose={() => { setModal(null); setDeletingCustomField(null); }} />}
+
+      {editingCategory && <RenameFieldModal type="Category" initialName={editingCategory.name} onUpdate={(newName) => { handleRenameCategory(editingCategory.id, newName); setEditingCategory(null); }} onClose={() => setEditingCategory(null)} />}
+      {deletingCategory && <DeleteFieldModal type="Category" name={deletingCategory.name} count={transactions.filter(t => t.category === deletingCategory.name).length} onDelete={() => { handleDeleteCategory(deletingCategory.id); setDeletingCategory(null); }} onClose={() => setDeletingCategory(null)} />}
+      {editingPaymentMode && <RenameFieldModal type="Payment Mode" initialName={editingPaymentMode.name} onUpdate={(newName) => { handleRenamePaymentMode(editingPaymentMode.id, newName); setEditingPaymentMode(null); }} onClose={() => setEditingPaymentMode(null)} />}
+      {deletingPaymentMode && <DeleteFieldModal type="Payment Mode" name={deletingPaymentMode.name} count={transactions.filter(t => t.payment_mode === deletingPaymentMode.name).length} onDelete={() => { handleDeletePaymentMode(deletingPaymentMode.id); setDeletingPaymentMode(null); }} onClose={() => setDeletingPaymentMode(null)} />}
 
       {showAddPanel && (
         <AddMemberPanel
