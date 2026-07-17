@@ -2,10 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Copy, Trash2, Plus, Upload, BookOpen, MoreVertical,
-  Search, X, ChevronRight, UserPlus, Check, Info, Pencil,
+  Search, X, ChevronRight, UserPlus, Check, Info, Pencil, TriangleAlert, ChevronDown,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../api';
+import RolesPermissionsPanel from '../shared/RolesPermissionsPanel';
 
 /* ─── Avatar color ──────────────────────────────────────────── */
 const AVATAR_COLORS = [
@@ -46,11 +47,102 @@ const ROLE_BADGE = {
   'Viewer': { bg: '#F3F4F6', color: '#374151' },
 };
 
+const BOOK_ROLES_PERMISSIONS = [
+  {
+    key: 'Primary Admin',
+    permissions: [
+      'View entries and download reports',
+      'Add Cash In or Cash Out entries',
+      'Edit and delete entries',
+      'Access to all Book Settings',
+      'Move or copy entries from one book to other book',
+      'Access Book Activity and Entry\'s Edit History',
+      'Duplicate and Delete Book',
+    ],
+    restrictions: []
+  },
+  {
+    key: 'Admin',
+    permissions: [
+      'View entries and download reports',
+      'Add Cash In or Cash Out entries',
+      'Edit and delete entries',
+      'Access to all Book Settings',
+      'Move or copy entries from one book to other book',
+      'Access Book Activity and Entry\'s Edit History',
+    ],
+    restrictions: [
+      'Cannot Duplicate and Delete Book',
+    ]
+  },
+  {
+    key: 'Book Admin',
+    permissions: [
+      'View entries and download reports',
+      'Add Cash In or Cash Out entries',
+      'Edit and delete entries',
+      'Access to all Book Settings',
+      'Move or copy entries from one book to other book',
+      'Access Book Activity and Entry\'s Edit History',
+    ],
+    restrictions: [
+      'Cannot Duplicate and Delete Book',
+    ]
+  },
+  {
+    key: 'Data Operator',
+    permissions: [
+      'View entries',
+      'Add Cash In or Cash Out entries',
+    ],
+    restrictions: [
+      'Cannot Edit and delete entries',
+      'Cannot Access to all Book Settings',
+      'Cannot Move or copy entries from one book to other book',
+      'Cannot Duplicate and Delete Book',
+    ]
+  },
+  {
+    key: 'Viewer',
+    permissions: [
+      'View entries and download reports',
+    ],
+    restrictions: [
+      'Cannot Add Cash In or Cash Out entries',
+      'Cannot Edit and delete entries',
+      'Cannot Access to all Book Settings',
+    ]
+  }
+];
+
 /* ─── Toggle switch ─────────────────────────────────────────── */
 function Toggle({ on, onChange }) {
   return (
     <div onClick={() => onChange(!on)} style={{ width: 38, height: 22, borderRadius: 11, cursor: 'pointer', background: on ? 'var(--blue)' : 'var(--gray-300)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
       <div style={{ position: 'absolute', top: 3, left: on ? 19 : 3, width: 16, height: 16, borderRadius: '50%', background: 'white', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+    </div>
+  );
+}
+
+function TextToggle({ on, onChange }) {
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onChange(!on); }}
+      style={{
+        width: 56, height: 26, borderRadius: 13, cursor: 'pointer',
+        background: on ? '#EEF2FF' : 'var(--gray-100)',
+        position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+        display: 'flex', alignItems: 'center'
+      }}
+    >
+      {on && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)', marginLeft: 8 }}>ON</span>}
+      <div
+        style={{
+          position: 'absolute', top: 3, left: on ? 33 : 3,
+          width: 20, height: 20, borderRadius: '50%', background: 'white',
+          transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+        }}
+      />
     </div>
   );
 }
@@ -248,10 +340,46 @@ function RemoveMemberModal({ member, bookName, onConfirm, onClose }) {
             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'var(--white)'}
           >Cancel</button>
-          <button onClick={async () => { try { await onConfirm(); } catch {} onClose(); }} style={{ padding: '10px 28px', borderRadius: 7, border: 'none', background: '#DC2626', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          <button onClick={async () => { try { await onConfirm(); } catch { } onClose(); }} style={{ padding: '10px 28px', borderRadius: 7, border: 'none', background: '#DC2626', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#B91C1C'}
             onMouseLeave={(e) => e.currentTarget.style.background = '#DC2626'}
           >Remove</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Delete Custom Field Modal ─────────────────────────────── */
+function DeleteCustomFieldModal({ customField, onDelete, onClose }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', zIndex: 800 }} onClick={onClose}>
+      <div style={{ background: 'var(--white)', borderRadius: 12, width: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--gray-900)' }}>Delete Custom Field ?</span>
+          <X size={20} style={{ cursor: 'pointer', color: 'var(--gray-500)' }} onClick={onClose} />
+        </div>
+        <div style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px', borderRadius: 8, background: '#FFF7ED', border: '1px solid #FFEDD5', color: '#C2410C', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>
+            <TriangleAlert size={18} />
+            Are you sure? This cannot be undone
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--gray-700)', lineHeight: 1.5 }}>
+            This custom field ({customField.name}) will be deleted with all the data entered using this field
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--gray-100)', justifyContent: 'center', background: 'var(--gray-50)' }}>
+          <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center', padding: '11px', borderRadius: 8, border: 'none', background: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--blue)' }}>
+            <X size={16} /> Cancel
+          </button>
+          <button
+            onClick={async () => { setSaving(true); try { await onDelete(); onClose(); } finally { setSaving(false); } }}
+            disabled={saving}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center', padding: '11px', borderRadius: 8, border: '1px solid #DC2626', background: 'var(--white)', color: '#DC2626', fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}
+          >
+            <Trash2 size={16} /> {saving ? 'Deleting...' : 'Yes, Delete'}
+          </button>
         </div>
       </div>
     </div>
@@ -276,7 +404,7 @@ function Toast({ message, onHide }) {
       animation: 'fadeInUp 200ms ease',
     }}>
       <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5l3 3 6-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5l3 3 6-7" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
       {message}
     </div>
@@ -293,7 +421,7 @@ function ChangeRolePanel({ member, bookName, onUpdate, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', padding: 2 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
             <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Change {member.name}'s Role</span>
           </div>
@@ -344,7 +472,7 @@ function ChangeRolePanel({ member, bookName, onUpdate, onClose }) {
           </div>
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--gray-100)' }}>
-          <button onClick={async () => { try { await onUpdate(member.id, role); } catch {} onClose(); }} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Update</button>
+          <button onClick={async () => { try { await onUpdate(member.id, role); } catch { } onClose(); }} style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Update</button>
         </div>
       </div>
     </>
@@ -375,24 +503,24 @@ function SuccessModal({ memberName, role, bookName, totalCount, onAddMore, onClo
 
 /* ─── Add New Member modal ──────────────────────────────────── */
 function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
-  const [step, setStep]           = useState(1);
+  const [step, setStep] = useState(1);
   const [inputMode, setInputMode] = useState('email'); // 'email' | 'mobile'
-  const [email, setEmail]         = useState('');
-  const [mobile, setMobile]       = useState('');
-  const [name, setName]           = useState('');
-  const [userId, setUserId]       = useState(null);
+  const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [name, setName] = useState('');
+  const [userId, setUserId] = useState(null);
   const [lookupState, setLookupState] = useState('idle'); // 'idle'|'checking'|'found'|'notfound'
-  const [role, setRole]           = useState('Data Operator');
-  const [adding, setAdding]       = useState(false);
-  const debounceRef               = useRef(null);
+  const [role, setRole] = useState('Data Operator');
+  const [adding, setAdding] = useState(false);
+  const debounceRef = useRef(null);
 
-  const isValidEmail  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isValidMobile = /^\d{10}$/.test(mobile.trim());
-  const validInput    = inputMode === 'email' ? isValidEmail : isValidMobile;
-  const isNewUser     = lookupState === 'notfound';
+  const validInput = inputMode === 'email' ? isValidEmail : isValidMobile;
+  const isNewUser = lookupState === 'notfound';
   // Allow an existing user (found) OR inviting a brand-new user once a name is typed
   // — same validation/logic as the Team page "Add New Member" flow.
-  const canNext       = lookupState === 'found' || (isNewUser && validInput && name.trim().length > 0);
+  const canNext = lookupState === 'found' || (isNewUser && validInput && name.trim().length > 0);
 
   const resetLookup = () => { setUserId(null); setName(''); setLookupState('idle'); };
 
@@ -435,7 +563,7 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
   };
 
-  const handleNext   = () => { if (canNext) setStep(2); };
+  const handleNext = () => { if (canNext) setStep(2); };
   const displayValue = inputMode === 'email' ? email.trim() : `+91${mobile}`;
 
   const handleConfirm = async () => {
@@ -443,9 +571,9 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
     setAdding(true);
     try {
       await onAdd({
-        name:    name.trim() || displayValue,
-        email:   inputMode === 'email'  ? email.trim() : undefined,
-        mobile:  inputMode === 'mobile' ? `+91${mobile}` : undefined,
+        name: name.trim() || displayValue,
+        email: inputMode === 'email' ? email.trim() : undefined,
+        mobile: inputMode === 'mobile' ? `+91${mobile}` : undefined,
         role,
         user_id: userId,
       });
@@ -460,8 +588,8 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
   const initials = (name || displayValue || '?')[0].toUpperCase();
 
   // Icon helpers
-  const SpinIcon  = () => <div style={{ width: 14, height: 14, border: '2px solid #E5E7EB', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />;
-  const OkIcon    = () => <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></div>;
+  const SpinIcon = () => <div style={{ width: 14, height: 14, border: '2px solid #E5E7EB', borderTopColor: 'var(--blue)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />;
+  const OkIcon = () => <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>;
   const inputBorder = (valid) => lookupState === 'found' ? '#16A34A' : valid ? 'var(--blue)' : 'var(--gray-200)';
 
   return (
@@ -504,10 +632,10 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
                     />
                     <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
                       {lookupState === 'checking' && <SpinIcon />}
-                      {lookupState === 'found'    && <OkIcon />}
+                      {lookupState === 'found' && <OkIcon />}
                     </div>
                   </div>
-                  {lookupState === 'found'    && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
+                  {lookupState === 'found' && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
                   {lookupState === 'notfound' && <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 5 }}>Not a CashBook user — enter a name below to send an invite.</div>}
                 </div>
               )}
@@ -529,11 +657,11 @@ function AddNewMemberModal({ businessName, bookName, onAdd, onClose }) {
                       />
                       <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)' }}>
                         {lookupState === 'checking' && <SpinIcon />}
-                        {lookupState === 'found'    && <OkIcon />}
-                        </div>
+                        {lookupState === 'found' && <OkIcon />}
+                      </div>
                     </div>
                   </div>
-                  {lookupState === 'found'    && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
+                  {lookupState === 'found' && <div style={{ fontSize: 12, color: '#16A34A', marginTop: 5, fontWeight: 500 }}>CashBook user found! Name auto-filled.</div>}
                   {lookupState === 'notfound' && <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 5 }}>Not a CashBook user — enter a name below to send an invite.</div>}
                 </div>
               )}
@@ -738,11 +866,13 @@ function AddMemberPanel({ businessName, bookName, bookMembers, businessTeam, onA
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--gray-100)' }}
                 onMouseEnter={e => { if (!alreadyInBook) e.currentTarget.style.background = 'var(--gray-50)'; }}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                {(() => { const ac = avatarColor(m.name); return (
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
-                    {(m.name || '?')[0].toUpperCase()}
-                  </div>
-                ); })()}
+                {(() => {
+                  const ac = avatarColor(m.name); return (
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
+                      {(m.name || '?')[0].toUpperCase()}
+                    </div>
+                  );
+                })()}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>{m.mobile || m.email || ''}</div>
@@ -811,6 +941,392 @@ function AddCategoryModal({ onAdd, onClose }) {
   );
 }
 
+function AddPaymentModeModal({ onAdd, onClose }) {
+  const [name, setName] = useState('');
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600 }} onClick={onClose}>
+      <div style={{ background: 'var(--white)', borderRadius: 12, width: 360, boxShadow: '0 10px 40px rgba(0,0,0,0.2)', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>Add Payment Mode</span>
+          <X size={18} style={{ cursor: 'pointer', color: 'var(--gray-400)' }} onClick={onClose} />
+        </div>
+        <div style={{ padding: '20px' }}>
+          <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Payment Mode Name" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--blue)', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, padding: '12px 20px', borderTop: '1px solid var(--gray-100)', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={() => { if (name.trim()) { onAdd(name.trim()); onClose(); } }} style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: 'var(--blue)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Add</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Add Custom Field Modal ─────────────────────────────── */
+function AddCustomFieldModal({ initialData, onAdd, onClose }) {
+  const [name, setName] = useState(initialData?.name || '');
+  const [required, setRequired] = useState(initialData ? !initialData.required : false);
+  const [enabled, setEnabled] = useState(initialData?.enabled ?? true);
+  const [fieldType, setFieldType] = useState(initialData?.fieldType || '');
+  const [typeOpen, setTypeOpen] = useState(false);
+  /* Dropdown options state */
+  const [options, setOptions] = useState(
+    initialData?.options ? initialData.options.map((opt, i) => {
+      if (typeof opt === 'string') return { id: i.toString(), label: opt, disabled: false, isEditing: false };
+      return { id: i.toString(), label: opt.label, disabled: opt.disabled || false, isEditing: false };
+    }) : []
+  );
+  const [draftOption, setDraftOption] = useState(''); // the current "Enter option" row
+  const [optionMenuOpen, setOptionMenuOpen] = useState(null); // index of open 3-dot menu
+  const FIELD_TYPES = ['Text', 'Select (Dropdown)', 'Number'];
+
+  const isDropdown = fieldType === 'Select (Dropdown)';
+  const canCreate = name.trim() && fieldType && (!isDropdown || options.length > 0);
+
+  const confirmDraft = () => {
+    const val = draftOption.trim();
+    if (!val) return;
+    setOptions((prev) => [...prev, { id: Date.now().toString(36), label: val, disabled: false, isEditing: false }]);
+    setDraftOption('');
+  };
+
+  const deleteOption = (idx) => {
+    setOptions((prev) => prev.filter((_, i) => i !== idx));
+    setOptionMenuOpen(null);
+  };
+
+  const toggleDisableOption = (idx) => {
+    setOptions((prev) => prev.map((opt, i) => i === idx ? { ...opt, disabled: !opt.disabled } : opt));
+    setOptionMenuOpen(null);
+  };
+
+  const startEditOption = (idx) => {
+    setOptions((prev) => prev.map((opt, i) => i === idx ? { ...opt, isEditing: true, editValue: opt.label } : opt));
+    setOptionMenuOpen(null);
+  };
+
+  const saveEditOption = (idx, newValue) => {
+    setOptions((prev) => prev.map((opt, i) => i === idx ? { ...opt, label: newValue || opt.label, isEditing: false } : opt));
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 700 }} onClick={onClose}>
+      <div
+        style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0, width: 420,
+          background: 'var(--white)', display: 'flex', flexDirection: 'column',
+          boxShadow: '-4px 0 24px rgba(0,0,0,0.18)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--gray-100)' }}>
+          <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--gray-900)' }}>{initialData ? 'Edit Custom Field' : 'Add Custom Field'}</span>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)', display: 'flex', padding: 4 }}><X size={20} /></button>
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+          {/* Name */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
+              Name <span style={{ color: '#DC2626' }}>*</span>
+            </label>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter field name"
+              style={{
+                width: '100%', padding: '10px 14px',
+                border: `1.5px solid ${name ? 'var(--blue)' : 'var(--gray-200)'}`,
+                borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                color: 'var(--gray-900)',
+              }}
+            />
+          </div>
+
+          {/* Required / Optional */}
+          <div style={{ display: 'flex', gap: 20, marginBottom: 20, alignItems: 'center' }}>
+            {[{ val: false, label: 'Required' }, { val: true, label: 'Optional' }].map(({ val, label }) => (
+              <label key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--gray-700)', fontWeight: 500 }}>
+                <input
+                  type="radio"
+                  name="cf-required"
+                  checked={required === val}
+                  onChange={() => setRequired(val)}
+                  style={{ accentColor: 'var(--blue)', width: 15, height: 15 }}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+
+          {/* Enable Field Toggle */}
+          {initialData && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', border: enabled ? '1.5px solid var(--blue)' : '1px solid var(--gray-200)', borderRadius: 8, marginBottom: 20 }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--gray-800)' }}>Enable Field</span>
+              <div
+                onClick={() => setEnabled(!enabled)}
+                style={{ width: 38, height: 22, borderRadius: 12, background: enabled ? 'var(--blue)' : 'var(--gray-300)', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 2, left: enabled ? 18 : 2, transition: 'left 0.2s' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Field Type */}
+          <div style={{ marginBottom: isDropdown ? 20 : 0 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
+              Field Type {initialData ? '' : <span style={{ color: '#DC2626' }}>*</span>}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <button
+                disabled={!!initialData}
+                onClick={() => setTypeOpen((o) => !o)}
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 8,
+                  border: `1px solid ${initialData ? 'var(--gray-200)' : fieldType ? 'var(--blue)' : 'var(--gray-200)'}`,
+                  background: initialData ? 'var(--gray-50)' : 'var(--white)', fontSize: 14, textAlign: 'left',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  cursor: initialData ? 'default' : 'pointer', color: fieldType ? 'var(--gray-900)' : 'var(--gray-400)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <span>{fieldType || 'Select Field Type'}</span>
+                {!initialData && <ChevronRight size={16} style={{ transform: typeOpen ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s', flexShrink: 0 }} />}
+              </button>
+              {typeOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                  background: 'var(--white)', border: '1px solid var(--gray-200)',
+                  borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.1)', zIndex: 10, overflow: 'hidden',
+                }}>
+                  {FIELD_TYPES.map((t) => (
+                    <label
+                      key={t}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 16px', cursor: 'pointer', fontSize: 14,
+                        color: 'var(--gray-800)', borderBottom: '1px solid var(--gray-100)',
+                        background: fieldType === t ? '#EFF6FF' : 'var(--white)',
+                      }}
+                      onMouseEnter={(e) => { if (fieldType !== t) e.currentTarget.style.background = 'var(--gray-50)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = fieldType === t ? '#EFF6FF' : 'var(--white)'; }}
+                      onClick={() => { setFieldType(t); setTypeOpen(false); }}
+                    >
+                      <input type="radio" name="cf-type" readOnly checked={fieldType === t} style={{ accentColor: 'var(--blue)', width: 15, height: 15 }} />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Dropdown Options Builder (only when Select (Dropdown) is chosen) ── */}
+          {isDropdown && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--blue)' }}>
+                  Select (Dropdown) Options
+                </span>
+                {options.length === 0 && (
+                  <span style={{ fontSize: 11, color: '#DC2626' }}>Add at least 1 option</span>
+                )}
+              </div>
+
+              {/* Confirmed options list */}
+              {options.map((opt, idx) => (
+                <div
+                  key={opt.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: opt.isEditing ? '2px 4px 2px 10px' : '8px 10px', marginBottom: 6,
+                    border: '1px solid var(--gray-200)', borderRadius: 8,
+                    background: opt.disabled ? 'var(--gray-50)' : 'var(--white)', position: 'relative',
+                    opacity: (opt.disabled && optionMenuOpen !== idx) ? 0.6 : 1,
+                    zIndex: optionMenuOpen === idx ? 30 : 1,
+                  }}
+                >
+                  {/* Drag handle */}
+                  <span style={{ color: 'var(--gray-300)', cursor: opt.isEditing ? 'default' : 'grab', display: 'flex', flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <circle cx="5" cy="4" r="1.2" /><circle cx="11" cy="4" r="1.2" />
+                      <circle cx="5" cy="8" r="1.2" /><circle cx="11" cy="8" r="1.2" />
+                      <circle cx="5" cy="12" r="1.2" /><circle cx="11" cy="12" r="1.2" />
+                    </svg>
+                  </span>
+
+                  {opt.isEditing ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={opt.editValue || ''}
+                        onChange={(e) => setOptions(prev => prev.map((o, i) => i === idx ? { ...o, editValue: e.target.value } : o))}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEditOption(idx, opt.editValue?.trim()); }}
+                        style={{
+                          flex: 1, border: 'none', outline: 'none', fontSize: 13,
+                          color: 'var(--gray-800)', padding: '8px 0', background: 'transparent',
+                        }}
+                      />
+                      <button
+                        onClick={() => saveEditOption(idx, opt.editValue?.trim())}
+                        disabled={!opt.editValue?.trim()}
+                        style={{
+                          border: 'none', background: 'none', cursor: opt.editValue?.trim() ? 'pointer' : 'default',
+                          color: opt.editValue?.trim() ? 'var(--blue)' : 'var(--gray-300)', padding: '4px 6px', display: 'flex',
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1, fontSize: 13, color: 'var(--gray-800)', textDecoration: opt.disabled ? 'line-through' : 'none' }}>{opt.label}</span>
+                      {/* 3-dot menu */}
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => setOptionMenuOpen(optionMenuOpen === idx ? null : idx)}
+                          style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)', padding: '2px 4px', display: 'flex' }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+                          </svg>
+                        </button>
+                        {optionMenuOpen === idx && (
+                          <div style={{
+                            position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                            background: 'var(--white)', border: '1px solid var(--gray-200)',
+                            borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 20, overflow: 'hidden', minWidth: 120,
+                          }}>
+                            <button
+                              onClick={() => startEditOption(idx)}
+                              style={{ display: 'block', width: '100%', padding: '9px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, color: 'var(--gray-700)', cursor: 'pointer', fontWeight: 500 }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => toggleDisableOption(idx)}
+                              style={{ display: 'block', width: '100%', padding: '9px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, color: 'var(--gray-700)', cursor: 'pointer', fontWeight: 500 }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            >
+                              {opt.disabled ? 'Enable' : 'Disable'}
+                            </button>
+                            <button
+                              onClick={() => deleteOption(idx)}
+                              style={{ display: 'block', width: '100%', padding: '9px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, color: '#DC2626', cursor: 'pointer', fontWeight: 500 }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+
+              {/* Draft / new option row — always visible */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '2px 4px 2px 10px', marginBottom: 2,
+                border: '1.5px solid var(--blue)', borderRadius: 8,
+                background: 'var(--white)',
+              }}>
+                {/* drag handle placeholder */}
+                <span style={{ color: 'var(--gray-300)', display: 'flex', flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="5" cy="4" r="1.2" /><circle cx="11" cy="4" r="1.2" />
+                    <circle cx="5" cy="8" r="1.2" /><circle cx="11" cy="8" r="1.2" />
+                    <circle cx="5" cy="12" r="1.2" /><circle cx="11" cy="12" r="1.2" />
+                  </svg>
+                </span>
+                <input
+                  value={draftOption}
+                  onChange={(e) => setDraftOption(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmDraft(); } }}
+                  placeholder="Enter option"
+                  style={{
+                    flex: 1, border: 'none', outline: 'none', fontSize: 13,
+                    color: 'var(--gray-800)', padding: '8px 0', background: 'transparent',
+                  }}
+                />
+                {/* Confirm tick */}
+                <button
+                  onClick={confirmDraft}
+                  disabled={!draftOption.trim()}
+                  style={{
+                    border: 'none', background: 'none', cursor: draftOption.trim() ? 'pointer' : 'default',
+                    color: draftOption.trim() ? 'var(--blue)' : 'var(--gray-300)', padding: '4px 6px', display: 'flex',
+                  }}
+                  title="Confirm option"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer info box */}
+        {initialData && (
+          <div style={{ padding: '16px 24px', background: '#F5F3FF', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--blue)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
+              i
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--blue)', lineHeight: 1.4 }}>
+              Updating option will automatically change it in all past transactions where it was used.
+            </div>
+          </div>
+        )}
+
+        {/* Footer buttons */}
+        <div style={{ display: 'flex', gap: 10, padding: '16px 24px', borderTop: '1px solid var(--gray-100)', justifyContent: 'flex-end', background: 'var(--white)' }}>
+          <button
+            onClick={onClose}
+            style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 14, cursor: 'pointer', color: 'var(--gray-700)', fontWeight: 500 }}
+          >
+            Cancel
+          </button>
+          <button
+            disabled={!canCreate}
+            onClick={() => {
+              if (!canCreate) return;
+              onAdd({
+                id: initialData ? initialData.id : Date.now().toString(36),
+                name: name.trim(),
+                required: !required,
+                enabled,
+                fieldType,
+                options: isDropdown ? options.map((o) => ({ label: o.label, disabled: o.disabled })) : [],
+              });
+              onClose();
+            }}
+            style={{
+              padding: '10px 28px', borderRadius: 8, border: 'none',
+              background: canCreate ? 'var(--blue)' : 'var(--gray-200)',
+              color: canCreate ? 'white' : 'var(--gray-400)',
+              fontSize: 14, fontWeight: 600, cursor: canCreate ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {initialData ? 'Save Changes' : 'Create'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main ─────────────────────────────────────────────────── */
 export default function BookSettings() {
   const { businessId, bookId } = useParams();
@@ -820,13 +1336,14 @@ export default function BookSettings() {
   const book = cashbooks.find((b) => b.id === bookId);
 
   const [activeTab, setActiveTab] = useState('members');
-  const [activeSection, setActiveSection] = useState('party');
+  const [activeSection, setActiveSection] = useState(null);
 
   /* members */
   const [bookMembers, setBookMembers] = useState([]);
   const [addedIds, setAddedIds] = useState(new Set());
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [showAddNewModal, setShowAddNewModal] = useState(false);
+  const [showRoles, setShowRoles] = useState(false);
   const [businessTeam, setBusinessTeam] = useState([]);
   const [memberMenuId, setMemberMenuId] = useState(null);
   const [changeRoleTarget, setChangeRoleTarget] = useState(null);
@@ -841,11 +1358,37 @@ export default function BookSettings() {
   });
 
   /* entry field */
-  const [showParty, setShowParty] = useState(true);
-  const [showCategory, setShowCategory] = useState(true);
-  const [categoryRequired, setCategoryRequired] = useState(false);
+  const FS_KEY = `cashbook_field_settings_${bookId}`;
+  const [fieldSettings, setFieldSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(FS_KEY) || '{"showParty":true,"showCategory":true,"showPaymentMode":true,"categoryRequired":false,"paymentModeRequired":false}');
+    } catch {
+      return { showParty: true, showCategory: true, showPaymentMode: true, categoryRequired: false, paymentModeRequired: false };
+    }
+  });
+
+  const updateFieldSettings = (updates) => {
+    const nextSettings = { ...fieldSettings, ...updates };
+    setFieldSettings(nextSettings);
+    localStorage.setItem(FS_KEY, JSON.stringify(nextSettings));
+  };
   const [parties, setParties] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [paymentModes, setPaymentModes] = useState([]);
+
+  /* custom fields — persisted per book in localStorage */
+  const LS_KEY = `cashbook_custom_fields_${bookId}`;
+  const [customFields, setCustomFields] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+  });
+  const [editingCustomField, setEditingCustomField] = useState(null);
+  const [deletingCustomField, setDeletingCustomField] = useState(null);
+  const [openCustomFieldMenu, setOpenCustomFieldMenu] = useState(null);
+
+  const saveCustomFields = (fields) => {
+    setCustomFields(fields);
+    localStorage.setItem(LS_KEY, JSON.stringify(fields));
+  };
 
   /* book modals */
   const [modal, setModal] = useState(null);
@@ -890,8 +1433,44 @@ export default function BookSettings() {
     if (!showAddPanel || !businessId) return;
     api.team.list(businessId)
       .then(({ members }) => setBusinessTeam(members || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [showAddPanel, businessId]);
+
+  // Load custom categories
+  const loadSettings = useCallback(async () => {
+    if (!businessId || !bookId) return;
+    try {
+      const { categories: customCats, paymentModes: customPMs } = await api.cashbooks.getSettings(businessId, bookId);
+      setCategories(customCats.map(c => c.name));
+      setPaymentModes(customPMs ? customPMs.map(p => p.name) : []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [businessId, bookId]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const handleAddCustomCategory = async (name) => {
+    try {
+      await api.cashbooks.addCategory(businessId, bookId, name);
+      setCategories(prev => [...prev, name]);
+      setToast('Category added successfully');
+    } catch (err) {
+      setToast('Failed to add category');
+    }
+  };
+
+  const handleAddCustomPaymentMode = async (name) => {
+    try {
+      await api.cashbooks.addPaymentMode(businessId, bookId, name);
+      setPaymentModes(prev => [...prev, name]);
+      setToast('Payment mode added successfully');
+    } catch (err) {
+      setToast('Failed to add payment mode');
+    }
+  };
 
   if (!book) {
     return (
@@ -911,8 +1490,8 @@ export default function BookSettings() {
     // Guard: prevent re-adding someone already in this book
     const alreadyIn = bookMembers.some(m => {
       if (newMember.user_id && m.user_id === newMember.user_id) return true;
-      if (newMember.email  && m.email?.toLowerCase()  === newMember.email.toLowerCase())  return true;
-      if (newMember.mobile && m.mobile                === newMember.mobile)                return true;
+      if (newMember.email && m.email?.toLowerCase() === newMember.email.toLowerCase()) return true;
+      if (newMember.mobile && m.mobile === newMember.mobile) return true;
       return false;
     });
     if (alreadyIn) throw new Error('This member is already part of this cashbook.');
@@ -1019,7 +1598,7 @@ export default function BookSettings() {
               {/* Member count + roles link */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--gray-900)' }}>Total Members ({bookMembers.length})</span>
-                <button style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--blue)', fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setShowRoles(true)} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--blue)', fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer' }}>
                   View roles & permissions <ChevronRight size={14} />
                 </button>
               </div>
@@ -1032,11 +1611,13 @@ export default function BookSettings() {
                   const badgeStyle = ROLE_BADGE[m.role] || { bg: '#F3F4F6', color: '#374151' };
                   return (
                     <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < bookMembers.length - 1 ? '1px solid var(--gray-100)' : 'none', position: 'relative' }}>
-                      {(() => { const ac = avatarColor(m.name); return (
-                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
-                          {m.name[0].toUpperCase()}
-                        </div>
-                      ); })()}
+                      {(() => {
+                        const ac = avatarColor(m.name); return (
+                          <div style={{ width: 40, height: 40, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 500, color: ac.color, flexShrink: 0 }}>
+                            {m.name[0].toUpperCase()}
+                          </div>
+                        );
+                      })()}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{m.isYou ? 'You' : m.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--gray-400)' }}>
@@ -1111,107 +1692,307 @@ export default function BookSettings() {
 
           {/* Entry Field tab */}
           {activeTab === 'entry-field' && (
-            <div>
-              <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid var(--gray-100)', marginBottom: 24 }}>
-                {[['party', 'Party'], ['category', 'Category']].map(([k, label]) => (
-                  <button key={k} onClick={() => setActiveSection(k)} style={{
-                    padding: '8px 20px', border: 'none', background: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                    color: activeSection === k ? 'var(--blue)' : 'var(--gray-500)',
-                    borderBottom: `2px solid ${activeSection === k ? 'var(--blue)' : 'transparent'}`,
-                    marginBottom: -2,
-                  }}>
-                    {label}
-                    {k === 'category' && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>}
-                  </button>
-                ))}
-              </div>
-
-              {activeSection === 'party' && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+            <div style={{ maxWidth: 680 }}>
+              {!activeSection && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Party field */}
+                  <div onClick={() => setActiveSection('party')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--white)', border: '1px solid var(--gray-100)', borderRadius: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>Show field</div>
-                      <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>Show Party field in entry form</div>
-                    </div>
-                    <Toggle on={showParty} onChange={setShowParty} />
-                  </div>
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 10 }}>Add New Party</div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
-                        <Upload size={13} /> Import CSV <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 4px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
-                      </button>
-                      <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
-                        <BookOpen size={13} /> Import From Books
-                      </button>
-                      <button onClick={() => setModal('add-party')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--blue-light)', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
-                        <Plus size={13} /> Add Manually
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 8 }}>Parties from this book ({parties.length})</div>
-                    {parties.length === 0 ? (
-                      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gray-400)', background: 'var(--gray-50)', borderRadius: 8, border: '1px dashed var(--gray-200)' }}>
-                        <div style={{ fontSize: 13 }}>No parties added yet</div>
-                        <div style={{ fontSize: 12, marginTop: 4 }}>Add parties to link with transactions</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--gray-900)' }}>
+                        Party field
                       </div>
-                    ) : (
-                      <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden' }}>
-                        {parties.map((p, i) => (
-                          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < parties.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
-                            <span style={{ fontSize: 13 }}>{p}</span>
-                            <button onClick={() => setParties((prev) => prev.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}><Trash2 size={13} /></button>
-                          </div>
-                        ))}
+                      <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>
+                        Rename, delete, reorder, add new or hide
                       </div>
-                    )}
+                    </div>
+                    <TextToggle on={fieldSettings.showParty} onChange={(val) => updateFieldSettings({ showParty: val })} />
+                  </div>
+
+                  {/* Category field */}
+                  <div onClick={() => setActiveSection('category')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--white)', border: '1px solid var(--gray-100)', borderRadius: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: 'var(--gray-900)' }}>
+                        Category field
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#16A34A', color: 'white' }}>New</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>
+                        Rename, delete, reorder, add new or hide
+                      </div>
+                    </div>
+                    <TextToggle on={fieldSettings.showCategory} onChange={(val) => updateFieldSettings({ showCategory: val })} />
+                  </div>
+
+                  {/* Payment Mode field */}
+                  <div onClick={() => setActiveSection('paymentMode')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--white)', border: '1px solid var(--gray-100)', borderRadius: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: 'var(--gray-900)' }}>
+                        Payment Mode field
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#16A34A', color: 'white' }}>New</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>
+                        Rename, delete, reorder, add new or hide
+                      </div>
+                    </div>
+                    <TextToggle on={fieldSettings.showPaymentMode} onChange={(val) => updateFieldSettings({ showPaymentMode: val })} />
+                  </div>
+
+                  {/* Custom fields */}
+                  <div onClick={() => setActiveSection('customFields')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--white)', border: '1px solid var(--gray-100)', borderRadius: 10, cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--gray-900)' }}>
+                        Custom fields
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 4 }}>
+                        Edit, delete and add new
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {activeSection === 'category' && (
+              {activeSection && (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>Show field</div>
-                      <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>Show Category field in entry form</div>
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, color: 'var(--gray-400)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      Entry Field <span style={{ color: 'var(--gray-300)' }}>|</span> {activeSection === 'category' ? 'Category' : activeSection === 'party' ? 'Party' : activeSection === 'paymentMode' ? 'Payment Mode' : 'Custom field'}
                     </div>
-                    <Toggle on={showCategory} onChange={setShowCategory} />
+                    <button onClick={() => setActiveSection(null)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0, border: 'none', background: 'none', color: 'var(--gray-900)', cursor: 'pointer', fontSize: 18, fontWeight: 600 }}>
+                      <ArrowLeft size={20} /> {activeSection === 'category' ? 'Category' : activeSection === 'party' ? 'Party' : activeSection === 'paymentMode' ? 'Payment Mode' : 'Custom field'}
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+
+                  {activeSection === 'party' && (
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
-                        Required field <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>Make Category mandatory for entries</div>
-                    </div>
-                    <Toggle on={categoryRequired} onChange={setCategoryRequired} />
-                  </div>
-                  {categories.length === 0 && (
-                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gray-400)', background: 'var(--gray-50)', borderRadius: 8, border: '1px dashed var(--gray-200)', marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>No Categories Found</div>
-                      <div style={{ fontSize: 12, marginTop: 4 }}>Add categories to organise your entries</div>
-                    </div>
-                  )}
-                  {categories.length > 0 && (
-                    <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
-                      {categories.map((c, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < categories.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
-                          <span style={{ fontSize: 13 }}>{c}</span>
-                          <button onClick={() => setCategories((prev) => prev.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}><Trash2 size={13} /></button>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600 }}>Show field</div>
+                          <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>Show Party field in entry form</div>
                         </div>
-                      ))}
+                        <Toggle on={fieldSettings.showParty} onChange={(val) => updateFieldSettings({ showParty: val })} />
+                      </div>
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 10 }}>Add New Party</div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
+                            <Upload size={13} /> Import CSV <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 4px', borderRadius: 3, background: '#DBEAFE', color: 'var(--blue)' }}>NEW</span>
+                          </button>
+                          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
+                            <BookOpen size={13} /> Import From Books
+                          </button>
+                          <button onClick={() => setModal('add-party')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--blue-light)', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
+                            <Plus size={13} /> Add Manually
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 8 }}>Parties from this book ({parties.length})</div>
+                        {parties.length === 0 ? (
+                          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gray-400)', background: 'var(--gray-50)', borderRadius: 8, border: '1px dashed var(--gray-200)' }}>
+                            <div style={{ fontSize: 13 }}>No parties added yet</div>
+                            <div style={{ fontSize: 12, marginTop: 4 }}>Add parties to link with transactions</div>
+                          </div>
+                        ) : (
+                          <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden' }}>
+                            {parties.map((p, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: i < parties.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
+                                <span style={{ fontSize: 13 }}>{p}</span>
+                                <button onClick={() => setParties((prev) => prev.filter((_, j) => j !== i))} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)' }}><Trash2 size={13} /></button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setModal('add-category')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--blue-light)', fontSize: 13, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
-                      <Plus size={13} /> Add New Category
-                    </button>
-                    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid var(--gray-200)', background: 'var(--white)', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}>
-                      <BookOpen size={13} /> Import from other books
-                    </button>
-                  </div>
+
+                  {activeSection === 'category' && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600 }}>Show field</div>
+                        </div>
+                        <Toggle on={fieldSettings.showCategory} onChange={(val) => updateFieldSettings({ showCategory: val })} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
+                            Required field <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#16A34A', color: 'white' }}>New</span>
+                          </div>
+                        </div>
+                        <Toggle on={fieldSettings.categoryRequired} onChange={(val) => updateFieldSettings({ categoryRequired: val })} />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                        <button onClick={() => setModal('add-category')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--white)', fontSize: 14, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
+                          <Plus size={16} /> Add New Category
+                        </button>
+                        <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--white)', fontSize: 14, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
+                          <BookOpen size={16} /> Import from other books
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 8 }}>Categories from this book ({categories.length})</div>
+
+                      {categories.length === 0 && (
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gray-400)', background: 'var(--gray-50)', borderRadius: 8, border: '1px dashed var(--gray-200)', marginBottom: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>No Categories Found</div>
+                          <div style={{ fontSize: 12, marginTop: 4 }}>Add categories to organise your entries</div>
+                        </div>
+                      )}
+
+                      {categories.length > 0 && (
+                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                          {categories.map((c, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < categories.length - 1 ? '1px solid var(--gray-100)' : 'none', background: 'var(--white)' }}>
+                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{c}</span>
+                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center' }}><MoreVertical size={16} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeSection === 'paymentMode' && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600 }}>Show field</div>
+                        </div>
+                        <Toggle on={fieldSettings.showPaymentMode} onChange={(val) => updateFieldSettings({ showPaymentMode: val })} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--gray-100)' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
+                            Required field <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 5px', borderRadius: 3, background: '#16A34A', color: 'white' }}>New</span>
+                          </div>
+                        </div>
+                        <Toggle on={fieldSettings.paymentModeRequired} onChange={(val) => updateFieldSettings({ paymentModeRequired: val })} />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                        <button onClick={() => setModal('add-payment-mode')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--white)', fontSize: 14, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
+                          <Plus size={16} /> Add New Payment Mode
+                        </button>
+                        <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 8, border: '1px solid var(--blue)', background: 'var(--white)', fontSize: 14, cursor: 'pointer', color: 'var(--blue)', fontWeight: 600 }}>
+                          <BookOpen size={16} /> Import from other books
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)', marginBottom: 8 }}>Payment Modes from this book ({paymentModes.length})</div>
+
+                      {paymentModes.length === 0 && (
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gray-400)', background: 'var(--gray-50)', borderRadius: 8, border: '1px dashed var(--gray-200)', marginBottom: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>No Payment Modes Found</div>
+                          <div style={{ fontSize: 12, marginTop: 4 }}>Add payment modes to organise your entries</div>
+                        </div>
+                      )}
+
+                      {paymentModes.length > 0 && (
+                        <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                          {paymentModes.map((p, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: i < paymentModes.length - 1 ? '1px solid var(--gray-100)' : 'none', background: 'var(--white)' }}>
+                              <span style={{ fontSize: 14, color: 'var(--gray-800)' }}>{p}</span>
+                              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-500)', display: 'flex', alignItems: 'center' }}><MoreVertical size={16} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeSection === 'customFields' && (
+                    <div>
+                      {customFields.length === 0 ? (
+                        <div style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          padding: '48px 24px', border: '1px solid var(--gray-200)', borderRadius: 12,
+                          background: 'var(--white)', gap: 16,
+                        }}>
+                          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="1.8">
+                              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                              <line x1="7" y1="7" x2="7.01" y2="7" />
+                            </svg>
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--gray-800)' }}>No Custom Fields Found</div>
+                          <button
+                            onClick={() => setModal('add-custom-field')}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '12px 28px', borderRadius: 8, border: 'none',
+                              background: 'var(--blue)', color: 'white',
+                              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                            }}
+                          >
+                            <Plus size={16} /> Add New Custom Field
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ border: '1px solid var(--gray-200)', borderRadius: 10, marginBottom: 16 }}>
+                            {customFields.map((cf, i) => (
+                              <div key={cf.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < customFields.length - 1 ? '1px solid var(--gray-100)' : 'none' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" strokeWidth="2">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                                  </svg>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--gray-900)' }}>{cf.name}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>
+                                    {cf.fieldType} · {cf.required ? 'Required' : 'Optional'}
+                                  </div>
+                                </div>
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => setOpenCustomFieldMenu(openCustomFieldMenu === cf.id ? null : cf.id)}
+                                    style={{ display: 'flex', padding: 4, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--gray-400)', borderRadius: 4 }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-100)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    <MoreVertical size={16} />
+                                  </button>
+                                  {openCustomFieldMenu === cf.id && (
+                                    <div style={{ position: 'absolute', right: 0, top: '100%', background: 'var(--white)', border: '1px solid var(--gray-200)', borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 100, overflow: 'hidden' }}>
+                                      <button
+                                        onClick={() => { setEditingCustomField(cf); setModal('add-custom-field'); setOpenCustomFieldMenu(null); }}
+                                        style={{ width: '100%', padding: '9px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: 'var(--gray-700)' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-50)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => { setDeletingCustomField(cf); setModal('delete-custom-field'); setOpenCustomFieldMenu(null); }}
+                                        style={{ width: '100%', padding: '9px 14px', border: 'none', background: 'none', textAlign: 'left', fontSize: 13, cursor: 'pointer', color: '#DC2626' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => { setEditingCustomField(null); setModal('add-custom-field'); }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              padding: '10px 20px', borderRadius: 8,
+                              border: '1.5px dashed var(--blue)', background: 'var(--blue-light)',
+                              color: 'var(--blue)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                            }}
+                          >
+                            <Plus size={14} /> Add New Custom Field
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1224,7 +2005,10 @@ export default function BookSettings() {
       {modal === 'delete' && <DeleteBookModal bookName={book.name} onDelete={() => { deleteCashbook(bookId); navigate(`/businesses/${businessId}/cashbooks`); }} onClose={() => setModal(null)} />}
       {modal === 'duplicate' && <DuplicateBookModal book={book} onClose={() => setModal(null)} onDuplicate={addCashbook} />}
       {modal === 'add-party' && <AddPartyModal onAdd={(name) => setParties((prev) => [...prev, name])} onClose={() => setModal(null)} />}
-      {modal === 'add-category' && <AddCategoryModal onAdd={(name) => setCategories((prev) => [...prev, name])} onClose={() => setModal(null)} />}
+      {modal === 'add-category' && <AddCategoryModal onAdd={handleAddCustomCategory} onClose={() => setModal(null)} />}
+      {modal === 'add-payment-mode' && <AddPaymentModeModal onAdd={handleAddCustomPaymentMode} onClose={() => setModal(null)} />}
+      {modal === 'add-custom-field' && <AddCustomFieldModal initialData={editingCustomField} onAdd={(cf) => saveCustomFields(customFields.some(x => x.id === cf.id) ? customFields.map(x => x.id === cf.id ? cf : x) : [...customFields, cf])} onClose={() => { setModal(null); setEditingCustomField(null); }} />}
+      {modal === 'delete-custom-field' && <DeleteCustomFieldModal customField={deletingCustomField} onDelete={() => saveCustomFields(customFields.filter(x => x.id !== deletingCustomField.id))} onClose={() => { setModal(null); setDeletingCustomField(null); }} />}
 
       {showAddPanel && (
         <AddMemberPanel
@@ -1281,6 +2065,15 @@ export default function BookSettings() {
         />
       )}
       {toast && <Toast message={toast} onHide={() => setToast(null)} />}
+
+      {showRoles && (
+        <RolesPermissionsPanel
+          roles={BOOK_ROLES_PERMISSIONS}
+          title="Roles & Permissions"
+          myRole={myBookRole || 'Primary Admin'}
+          onClose={() => setShowRoles(false)}
+        />
+      )}
     </div>
   );
 }

@@ -381,7 +381,7 @@ function CategoriesFilter({ categories, value, onChange }) {
 }
 
 /* ─── SearchSelectDropdown ──────────────────────────────────── */
-function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select', fixedOptions = [], suggestions = [], parties = [], addLabel, onAdd, importLabel, onImport }) {
+function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select', fixedOptions = [], suggestions = [], parties = [], addLabel, onAdd, importLabel, onImport, error }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef(null);
@@ -406,7 +406,7 @@ function SearchSelectDropdown({ value, onChange, placeholder = 'Search or Select
         onClick={() => setOpen((v) => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          border: `1px solid ${open ? 'var(--blue)' : 'var(--gray-200)'}`,
+          border: `1px solid ${error ? '#DC2626' : open ? 'var(--blue)' : 'var(--gray-200)'}`,
           borderRadius: 8, padding: '8px 10px', cursor: 'pointer', background: 'var(--white)',
         }}
       >
@@ -918,21 +918,29 @@ function EntryDetailsPanel({ txn, onClose, onEdit, onDelete, onMove, onCopy, use
   );
 }
 
-function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onAddParty, businessId, bookId }) {
+function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onAddParty, businessId, bookId, customCategories = [], customPaymentModes = [], onAddCustomCategory, onAddCustomPaymentMode, fieldSettings }) {
   const isIn = type === 'IN';
   const accent = isIn ? '#16A34A' : '#DC2626';
   const accentLight = isIn ? '#DCFCE7' : '#FEE2E2';
 
-  const [form, setForm] = useState({
-    date: todayStr(),
-    time: initTime(),
-    timeEditing: false,
-    amount: '',
-    party: '',
-    remarks: '',
-    category: '',
-    paymentMode: '',
-    bills: [],
+  /* Read custom fields created in BookSettings for this book */
+  const customFields = (() => {
+    try { 
+      const parsed = JSON.parse(localStorage.getItem(`cashbook_custom_fields_${bookId}`) || '[]');
+      return parsed.filter(cf => cf.enabled !== false);
+    }
+    catch { return []; }
+  })();
+
+  const [form, setForm] = useState(() => {
+    const cfValues = {};
+    customFields.forEach((cf) => { cfValues[`cf_${cf.id}`] = ''; });
+    return {
+      date: todayStr(), time: initTime(), timeEditing: false,
+      amount: '', party: '', remarks: '', category: '', paymentMode: '',
+      bills: [],
+      ...cfValues,
+    };
   });
   const fileRef = useRef(null);
   const [billHover, setBillHover] = useState(false);
@@ -944,10 +952,21 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
   const setTime = (field, val) => setForm((prev) => ({ ...prev, time: { ...prev.time, [field]: val } }));
 
   const [saving, setSaving] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+
+  /* Validate required custom fields before saving */
+  const missingRequired = customFields.filter((cf) => cf.required && !form[`cf_${cf.id}`]?.trim());
 
   const handleSave = async (addNew) => {
-    if (!form.amount) return;
+    if (!form.amount) { setShowErrors(true); return; }
+    if (fieldSettings?.categoryRequired && !form.category) { setShowErrors(true); return; }
+    if (fieldSettings?.paymentModeRequired && !form.paymentMode) { setShowErrors(true); return; }
+    if (missingRequired.length > 0) {
+      setShowErrors(true);
+      return;
+    }
     setSaving(true);
+    setShowErrors(false);
     try {
       let uploadedUrls = [];
       const newFiles = form.bills.filter(f => f instanceof File);
@@ -971,6 +990,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
         category: form.category,
         paymentMode: form.paymentMode,
         attachments: finalAttachments.length > 0 ? finalAttachments : null,
+        customFields: customFields.reduce((acc, cf) => { acc[cf.name] = form[`cf_${cf.id}`] || ''; return acc; }, {}),
       });
 
       if (addNew) {
@@ -1131,37 +1151,49 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
           </div>
 
           {/* Category + Payment Mode */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Category</label>
-                <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
-              </div>
-              <SearchSelectDropdown
-                value={form.category}
-                onChange={(v) => set('category', v)}
-                placeholder="Search or Select"
-                suggestions={CATEGORY_SUGGESTIONS}
-                addLabel="Add New Category"
-                onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
-              />
+          {(fieldSettings?.showCategory !== false || fieldSettings?.showPaymentMode !== false) && (
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              {fieldSettings?.showCategory !== false && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>
+                      Category {fieldSettings?.categoryRequired && <span style={{ color: '#DC2626' }}>*</span>}
+                    </label>
+                    <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                  </div>
+                  <SearchSelectDropdown
+                    error={showErrors && fieldSettings?.categoryRequired && !form.category}
+                    value={form.category}
+                    onChange={(v) => set('category', v)}
+                    placeholder="Search or Select"
+                    suggestions={[...CATEGORY_SUGGESTIONS, ...customCategories]}
+                    addLabel="Add New Category"
+                    onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
+                  />
+                </div>
+              )}
+              {fieldSettings?.showPaymentMode !== false && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>
+                      Payment Mode {fieldSettings?.paymentModeRequired && <span style={{ color: '#DC2626' }}>*</span>}
+                    </label>
+                    <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                  </div>
+                  <SearchSelectDropdown
+                    error={showErrors && fieldSettings?.paymentModeRequired && !form.paymentMode}
+                    value={form.paymentMode}
+                    onChange={(v) => set('paymentMode', v)}
+                    placeholder="Search or Select"
+                    fixedOptions={PAYMENT_FIXED}
+                    suggestions={[...PAYMENT_SUGGESTIONS, ...customPaymentModes]}
+                    addLabel="Add New Payment Mode"
+                    onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
+                  />
+                </div>
+              )}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Payment Mode</label>
-                <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
-              </div>
-              <SearchSelectDropdown
-                value={form.paymentMode}
-                onChange={(v) => set('paymentMode', v)}
-                placeholder="Search or Select"
-                fixedOptions={PAYMENT_FIXED}
-                suggestions={PAYMENT_SUGGESTIONS}
-                addLabel="Add New Payment Mode"
-                onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Attach Bills */}
           <div style={{ marginBottom: 12 }}>
@@ -1230,6 +1262,71 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               </div>
             )}
           </div>
+
+          {/* Custom Fields */}
+          {customFields.length > 0 && customFields.map((cf) => {
+            const val = form[`cf_${cf.id}`] || '';
+            const isEmpty = showErrors && cf.required && !val.trim();
+            return (
+              <div key={cf.id} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: isEmpty ? '#DC2626' : 'var(--gray-600)' }}>
+                    {cf.name}
+                    {cf.required && <span style={{ color: '#DC2626', marginLeft: 2 }}>*</span>}
+                  </label>
+                  <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                </div>
+                {cf.fieldType === 'Select (Dropdown)' ? (
+                  <select
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: val ? 'var(--gray-700)' : 'var(--gray-400)',
+                      background: 'var(--white)', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">Select {cf.name}</option>
+                    {(cf.options || []).map((opt) => {
+                      const label = typeof opt === 'string' ? opt : opt.label;
+                      const disabled = typeof opt === 'string' ? false : opt.disabled;
+                      return <option key={label} value={label} disabled={disabled}>{label}</option>;
+                    })}
+                  </select>
+                ) : cf.fieldType === 'Number' ? (
+                  <input
+                    type="number"
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
+                    placeholder={cf.name}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: 'var(--gray-700)',
+                    }}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    placeholder={cf.name}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: 'var(--gray-700)',
+                    }}
+                  />
+                )}
+                {isEmpty && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 3 }}>{cf.name} is required</div>}
+              </div>
+            );
+          })}
 
           {/* Add more fields banner */}
           <div style={{
@@ -1323,8 +1420,24 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
 }
 
 /* ─── Edit Entry panel ──────────────────────────────────────── */
-function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, businessId, bookId }) {
+function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, businessId, bookId, customCategories = [], customPaymentModes = [], onAddCustomCategory, onAddCustomPaymentMode, fieldSettings }) {
   const [type, setType] = useState(txn.type);
+
+  /* Read custom fields for this book */
+  const customFields = (() => {
+    try { 
+      const parsed = JSON.parse(localStorage.getItem(`cashbook_custom_fields_${bookId}`) || '[]');
+      return parsed.filter(cf => cf.enabled !== false);
+    }
+    catch { return []; }
+  })();
+
+  /* Pre-fill custom field values from existing txn.customFields if available */
+  const cfValues = {};
+  customFields.forEach((cf) => {
+    cfValues[`cf_${cf.id}`] = txn.customFields?.[cf.name] || '';
+  });
+
   const [form, setForm] = useState({
     date: txn.date || todayStr(),
     amount: String(txn.amount || ''),
@@ -1337,6 +1450,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
       try { return typeof txn.attachments === 'string' ? JSON.parse(txn.attachments) : txn.attachments; }
       catch { return []; }
     })(),
+    ...cfValues,
   });
   const [saving, setSaving] = useState(false);
   const [showAddParty, setShowAddParty] = useState(false);
@@ -1354,9 +1468,21 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
     ? new Date(txn.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase().replace(/\s/g, ' ')
     : '';
 
+  const [showErrors, setShowErrors] = useState(false);
+
+  /* Validate required custom fields before saving */
+  const missingRequired = customFields.filter((cf) => cf.required && !form[`cf_${cf.id}`]?.trim());
+
   const handleSave = async () => {
-    if (!form.amount) return;
+    if (!form.amount) { setShowErrors(true); return; }
+    if (fieldSettings?.categoryRequired && !form.category) { setShowErrors(true); return; }
+    if (fieldSettings?.paymentModeRequired && !form.paymentMode) { setShowErrors(true); return; }
+    if (missingRequired.length > 0) {
+      setShowErrors(true);
+      return;
+    }
     setSaving(true);
+    setShowErrors(false);
     try {
       let uploadedUrls = [];
       const newFiles = form.bills.filter(f => f instanceof File);
@@ -1381,6 +1507,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
         category: form.category,
         paymentMode: form.paymentMode,
         attachments: finalAttachments.length > 0 ? finalAttachments : null,
+        customFields: customFields.reduce((acc, cf) => { acc[cf.name] = form[`cf_${cf.id}`] || ''; return acc; }, {}),
       });
     } catch (err) {
       alert('Failed to upload/save: ' + err.message);
@@ -1478,37 +1605,49 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
           </div>
 
           {/* Category + Payment Mode */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Category</label>
-                <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
-              </div>
-              <SearchSelectDropdown
-                value={form.category}
-                onChange={(v) => set('category', v)}
-                placeholder="Select"
-                suggestions={CATEGORY_SUGGESTIONS}
-                addLabel="Add New Category"
-                onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
-              />
+          {(fieldSettings?.showCategory !== false || fieldSettings?.showPaymentMode !== false) && (
+            <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              {fieldSettings?.showCategory !== false && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>
+                      Category {fieldSettings?.categoryRequired && <span style={{ color: '#DC2626' }}>*</span>}
+                    </label>
+                    <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                  </div>
+                  <SearchSelectDropdown
+                    error={showErrors && fieldSettings?.categoryRequired && !form.category}
+                    value={form.category}
+                    onChange={(v) => set('category', v)}
+                    placeholder="Select"
+                    suggestions={[...CATEGORY_SUGGESTIONS, ...customCategories]}
+                    addLabel="Add New Category"
+                    onAdd={(query) => setPromptState({ type: 'category', title: 'Add New Category', placeholder: 'Enter category name', initialValue: query || '' })}
+                  />
+                </div>
+              )}
+              {fieldSettings?.showPaymentMode !== false && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>
+                      Payment Mode {fieldSettings?.paymentModeRequired && <span style={{ color: '#DC2626' }}>*</span>}
+                    </label>
+                    <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                  </div>
+                  <SearchSelectDropdown
+                    error={showErrors && fieldSettings?.paymentModeRequired && !form.paymentMode}
+                    value={form.paymentMode}
+                    onChange={(v) => set('paymentMode', v)}
+                    placeholder="Select"
+                    fixedOptions={PAYMENT_FIXED}
+                    suggestions={[...PAYMENT_SUGGESTIONS, ...customPaymentModes]}
+                    addLabel="Add New Payment Mode"
+                    onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
+                  />
+                </div>
+              )}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)' }}>Payment Mode</label>
-                <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
-              </div>
-              <SearchSelectDropdown
-                value={form.paymentMode}
-                onChange={(v) => set('paymentMode', v)}
-                placeholder="Select"
-                fixedOptions={PAYMENT_FIXED}
-                suggestions={PAYMENT_SUGGESTIONS}
-                addLabel="Add New Payment Mode"
-                onAdd={(query) => setPromptState({ type: 'paymentMode', title: 'Add New Payment Mode', placeholder: 'Enter payment mode', initialValue: query || '' })}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Attachments */}
           <div style={{ marginBottom: 14 }}>
@@ -1566,6 +1705,72 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
               }}
             />
           </div>
+
+          {/* Custom Fields */}
+          {customFields.length > 0 && customFields.map((cf) => {
+            const val = form[`cf_${cf.id}`] || '';
+            const isEmpty = showErrors && cf.required && !val.trim();
+            return (
+              <div key={cf.id} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: isEmpty ? '#DC2626' : 'var(--gray-600)' }}>
+                    {cf.name}
+                    {cf.required && <span style={{ color: '#DC2626', marginLeft: 2 }}>*</span>}
+                  </label>
+                  <Settings size={13} color="var(--blue)" style={{ cursor: 'pointer' }} />
+                </div>
+                {cf.fieldType === 'Select (Dropdown)' ? (
+                  <select
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: val ? 'var(--gray-700)' : 'var(--gray-400)',
+                      background: 'var(--white)', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">Select {cf.name}</option>
+                    {(cf.options || []).map((opt) => {
+                      const label = typeof opt === 'string' ? opt : opt.label;
+                      const disabled = typeof opt === 'string' ? false : opt.disabled;
+                      return <option key={label} value={label} disabled={disabled}>{label}</option>;
+                    })}
+                  </select>
+                ) : cf.fieldType === 'Number' ? (
+                  <input
+                    type="number"
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
+                    placeholder={cf.name}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: 'var(--gray-700)',
+                    }}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={val}
+                    onChange={(e) => set(`cf_${cf.id}`, e.target.value)}
+                    placeholder={cf.name}
+                    style={{
+                      width: '100%', padding: '9px 12px',
+                      border: `1px solid ${isEmpty ? '#DC2626' : 'var(--gray-200)'}`,
+                      borderRadius: 8, fontSize: 13, outline: 'none',
+                      boxSizing: 'border-box', color: 'var(--gray-700)',
+                    }}
+                  />
+                )}
+                {isEmpty && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 3 }}>{cf.name} is required</div>}
+              </div>
+            );
+          })}
+
         </div>
 
         {/* Footer */}
@@ -1599,12 +1804,12 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
           title={promptState.title}
           placeholder={promptState.placeholder}
           initialValue={promptState.initialValue}
-          onSave={(val) => {
-            if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val)) {
-              CATEGORY_SUGGESTIONS.push(val);
+          onSave={async (val) => {
+            if (promptState.type === 'category' && !CATEGORY_SUGGESTIONS.includes(val) && !customCategories.includes(val)) {
+              if (onAddCustomCategory) await onAddCustomCategory(val);
             }
-            if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val)) {
-              PAYMENT_SUGGESTIONS.push(val);
+            if (promptState.type === 'paymentMode' && !PAYMENT_FIXED.includes(val) && !PAYMENT_SUGGESTIONS.includes(val) && !customPaymentModes.includes(val)) {
+              if (onAddCustomPaymentMode) await onAddCustomPaymentMode(val);
             }
             set(promptState.type, val);
             setPromptState(null);
@@ -2263,6 +2468,17 @@ export default function TransactionView() {
   const [payModes, setPayModes] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState([]);
   const [searchQ, setSearchQ] = useState('');
+  const [customCategories, setCustomCategories] = useState([]);
+  const [customPaymentModes, setCustomPaymentModes] = useState([]);
+  
+  const FS_KEY = `cashbook_field_settings_${bookId}`;
+  const [fieldSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(FS_KEY) || '{"showParty":true,"showCategory":true,"showPaymentMode":true,"categoryRequired":false,"paymentModeRequired":false}');
+    } catch {
+      return { showParty: true, showCategory: true, showPaymentMode: true, categoryRequired: false, paymentModeRequired: false };
+    }
+  });
 
   const searchRef = useRef(null);
 
@@ -2275,9 +2491,10 @@ export default function TransactionView() {
     if (!bookId || !businessId) return;
     if (showLoader) setLoading(true);
     try {
-      const [txnData, partyData] = await Promise.all([
+      const [txnData, partyData, settingsData] = await Promise.all([
         api.transactions.list(businessId, bookId),
         api.parties.list(businessId, bookId),
+        api.cashbooks.getSettings(businessId, bookId),
       ]);
       setTransactions(txnData.transactions.map((t) => ({
         ...t,
@@ -2286,6 +2503,8 @@ export default function TransactionView() {
       })));
       setMyBookRole(txnData.my_role || 'Primary Admin');
       setBookParties(partyData.parties);
+      setCustomCategories(settingsData.categories.map(c => c.name));
+      setCustomPaymentModes(settingsData.paymentModes.map(p => p.name));
     } catch (err) {
       console.error('[TransactionView] load failed:', err.message);
     } finally {
@@ -2314,6 +2533,24 @@ export default function TransactionView() {
 
   const goToSettings = () => navigate(`/businesses/${businessId}/cashbooks/${bookId}/settings`);
 
+  const handleAddCustomCategory = async (name) => {
+    try {
+      await api.cashbooks.addCategory(businessId, bookId, name);
+      setCustomCategories(prev => [...prev, name]);
+    } catch (err) {
+      console.error('[Add Category Failed]:', err.message);
+    }
+  };
+
+  const handleAddCustomPaymentMode = async (name) => {
+    try {
+      await api.cashbooks.addPaymentMode(businessId, bookId, name);
+      setCustomPaymentModes(prev => [...prev, name]);
+    } catch (err) {
+      console.error('[Add Payment Mode Failed]:', err.message);
+    }
+  };
+
   const addTransaction = useCallback(async (txn) => {
     try {
       const { transaction } = await api.transactions.create(businessId, bookId, {
@@ -2325,6 +2562,7 @@ export default function TransactionView() {
         category: txn.category || null,
         payment_mode: txn.paymentMode || null,
         attachments: txn.attachments || null,
+        customFields: txn.customFields || null,
       });
       setTransactions((prev) => [{ ...transaction, amount: parseFloat(transaction.amount) }, ...prev]);
     } catch (err) {
@@ -2355,8 +2593,12 @@ export default function TransactionView() {
         category: txn.category || null,
         payment_mode: txn.paymentMode || null,
         attachments: txn.attachments || null,
+        customFields: txn.customFields || null,
       });
-      setTransactions((prev) => prev.map((t) => t.id === txn.id ? { ...transaction, amount: parseFloat(transaction.amount) } : t));
+      setTransactions((prev) => prev.map((t) => t.id === txn.id
+        ? { ...transaction, amount: parseFloat(transaction.amount), customFields: transaction.customFields || {} }
+        : t
+      ));
     } catch (err) {
       console.error('[updateTransaction]', err.message);
       alert('Failed to update entry: ' + err.message);
@@ -2484,8 +2726,8 @@ export default function TransactionView() {
         <TypesFilter value={txnType} onChange={setTxnType} />
         <PartiesFilter parties={bookParties} value={partyFilter} onChange={setPartyFilter} onGoToSettings={goToSettings} />
         <MembersFilter members={teamMembers} value={memberFilter} onChange={setMemberFilter} />
-        <PaymentModesFilter modes={availableModes} value={payModes} onChange={setPayModes} />
-        <CategoriesFilter categories={availableCategories} value={categoryFilter} onChange={setCategoryFilter} />
+        {fieldSettings?.showPaymentMode !== false && <PaymentModesFilter modes={availableModes} value={payModes} onChange={setPayModes} />}
+        {fieldSettings?.showCategory !== false && <CategoriesFilter categories={availableCategories} value={categoryFilter} onChange={setCategoryFilter} />}
         {anyFilterActive && (
           <button
             onClick={clearAllFilters}
@@ -2648,8 +2890,8 @@ export default function TransactionView() {
                   {[
                     { label: 'Date & Time', align: 'left' },
                     { label: 'Details', align: 'left' },
-                    { label: 'Category', align: 'left' },
-                    { label: 'Mode', align: 'left' },
+                    ...(fieldSettings?.showCategory !== false ? [{ label: 'Category', align: 'left' }] : []),
+                    ...(fieldSettings?.showPaymentMode !== false ? [{ label: 'Mode', align: 'left' }] : []),
                     { label: 'Bill', align: 'center' },
                     { label: 'Amount', align: 'right' },
                     { label: 'Balance', align: 'right' },
@@ -2802,6 +3044,11 @@ export default function TransactionView() {
           onAddParty={addParty}
           businessId={businessId}
           bookId={bookId}
+          customCategories={customCategories}
+          customPaymentModes={customPaymentModes}
+          onAddCustomCategory={handleAddCustomCategory}
+          onAddCustomPaymentMode={handleAddCustomPaymentMode}
+          fieldSettings={fieldSettings}
         />
       )}
 
@@ -2816,6 +3063,11 @@ export default function TransactionView() {
           onAddParty={addParty}
           businessId={businessId}
           bookId={bookId}
+          customCategories={customCategories}
+          customPaymentModes={customPaymentModes}
+          onAddCustomCategory={handleAddCustomCategory}
+          onAddCustomPaymentMode={handleAddCustomPaymentMode}
+          fieldSettings={fieldSettings}
         />
       )}
 
