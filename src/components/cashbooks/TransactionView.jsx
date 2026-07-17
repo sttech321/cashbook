@@ -15,6 +15,25 @@ function todayStr() {
   return d.toISOString().split('T')[0];
 }
 
+function makeCreatedAt(dateStr, timeObj) {
+  if (!timeObj) return undefined;
+  let h = parseInt(timeObj.hour, 10);
+  if (timeObj.period === 'PM' && h !== 12) h += 12;
+  if (timeObj.period === 'AM' && h === 12) h = 0;
+  const hh = h.toString().padStart(2, '0');
+  const mm = timeObj.minute.padStart(2, '0');
+  return new Date(`${dateStr}T${hh}:${mm}:00`).toISOString();
+}
+
+function parseTimeFromCreatedAt(createdAtStr) {
+  if (!createdAtStr) return undefined; // Will fallback to initTime() if needed
+  const d = new Date(createdAtStr);
+  const h = d.getHours() % 12 || 12;
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const p = d.getHours() >= 12 ? 'PM' : 'AM';
+  return { hour: String(h), minute: m, period: p };
+}
+
 function formatDateTime(dateStr, createdAt) {
   const txDate = new Date(dateStr);
   const today = new Date();
@@ -925,7 +944,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
 
   /* Read custom fields created in BookSettings for this book */
   const customFields = (() => {
-    try { 
+    try {
       const parsed = JSON.parse(localStorage.getItem(`cashbook_custom_fields_${bookId}`) || '[]');
       return parsed.filter(cf => cf.enabled !== false);
     }
@@ -991,6 +1010,7 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
         paymentMode: form.paymentMode,
         attachments: finalAttachments.length > 0 ? finalAttachments : null,
         customFields: customFields.reduce((acc, cf) => { acc[cf.name] = form[`cf_${cf.id}`] || ''; return acc; }, {}),
+        created_at: makeCreatedAt(form.date, form.time),
       });
 
       if (addNew) {
@@ -1053,13 +1073,21 @@ function EntryPanel({ type, onTypeChange, onSave, onClose, bookParties = [], onA
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 4 }}>
                 Date <span style={{ color: '#DC2626' }}>*</span>
               </label>
-              <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector('input');
+                  if (input && input.showPicker) {
+                    try { input.showPicker(); } catch (err) {}
+                  }
+                }}
+                style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              >
                 <Calendar size={14} color="var(--blue)" />
                 <input
                   type="date"
                   value={form.date}
                   onChange={(e) => set('date', e.target.value)}
-                  style={{ border: 'none', outline: 'none', fontSize: 13, fontWeight: 600, color: 'var(--gray-800)', background: 'transparent', flex: 1 }}
+                  style={{ border: 'none', outline: 'none', fontSize: 13, fontWeight: 600, color: 'var(--gray-800)', background: 'transparent', flex: 1, cursor: 'pointer' }}
                 />
               </div>
             </div>
@@ -1425,7 +1453,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
 
   /* Read custom fields for this book */
   const customFields = (() => {
-    try { 
+    try {
       const parsed = JSON.parse(localStorage.getItem(`cashbook_custom_fields_${bookId}`) || '[]');
       return parsed.filter(cf => cf.enabled !== false);
     }
@@ -1440,6 +1468,8 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
 
   const [form, setForm] = useState({
     date: txn.date || todayStr(),
+    time: parseTimeFromCreatedAt(txn.created_at),
+    timeEditing: false,
     amount: String(txn.amount || ''),
     party: txn.party || '',
     remarks: txn.remarks || '',
@@ -1459,14 +1489,8 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
   const [promptState, setPromptState] = useState(null);
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+  const setTime = (field, val) => setForm((prev) => ({ ...prev, time: { ...prev.time, [field]: val } }));
   const accent = type === 'IN' ? '#16A34A' : '#DC2626';
-
-  const formattedDate = form.date
-    ? new Date(form.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
-    : 'Select date';
-  const timeStr = txn.created_at
-    ? new Date(txn.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase().replace(/\s/g, ' ')
-    : '';
 
   const [showErrors, setShowErrors] = useState(false);
 
@@ -1508,6 +1532,7 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
         paymentMode: form.paymentMode,
         attachments: finalAttachments.length > 0 ? finalAttachments : null,
         customFields: customFields.reduce((acc, cf) => { acc[cf.name] = form[`cf_${cf.id}`] || ''; return acc; }, {}),
+        created_at: makeCreatedAt(form.date, form.time),
       });
     } catch (err) {
       alert('Failed to upload/save: ' + err.message);
@@ -1546,18 +1571,52 @@ function EditEntryPanel({ txn, onSave, onClose, bookParties = [], onAddParty, bu
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 4 }}>Date <span style={{ color: '#DC2626' }}>*</span></label>
-              <div style={{ position: 'relative', border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector('input');
+                  if (input && input.showPicker) {
+                    try { input.showPicker(); } catch (err) {}
+                  }
+                }}
+                style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              >
                 <Calendar size={14} color="var(--blue)" />
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-800)', flex: 1, pointerEvents: 'none' }}>{formattedDate}</span>
-                <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => set('date', e.target.value)}
+                  style={{ border: 'none', outline: 'none', fontSize: 13, fontWeight: 600, color: 'var(--gray-800)', background: 'transparent', flex: 1, cursor: 'pointer' }}
+                />
               </div>
             </div>
             <div style={{ flexShrink: 0 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-600)', display: 'block', marginBottom: 4 }}>Time</label>
-              <div style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Clock size={14} color="var(--gray-400)" />
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>{timeStr}</span>
-              </div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: form.timeEditing ? 'var(--blue)' : 'var(--gray-600)', display: 'block', marginBottom: 4 }}>
+                Time {form.timeEditing && <span style={{ color: '#DC2626' }}>*</span>}
+              </label>
+              {!form.timeEditing ? (
+                <div
+                  onClick={() => set('timeEditing', true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    border: '1px solid var(--gray-200)', borderRadius: 8, padding: '8px 14px',
+                    cursor: 'pointer', background: 'var(--white)', whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--blue)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--gray-200)'}
+                >
+                  <Clock size={14} color="var(--gray-500)" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-800)' }}>
+                    {form.time.hour}:{form.time.minute} {form.time.period}
+                  </span>
+                </div>
+              ) : (
+                <TimePicker
+                  hour={form.time.hour}
+                  minute={form.time.minute}
+                  period={form.time.period}
+                  onChange={setTime}
+                />
+              )}
             </div>
           </div>
 
@@ -2470,7 +2529,7 @@ export default function TransactionView() {
   const [searchQ, setSearchQ] = useState('');
   const [customCategories, setCustomCategories] = useState([]);
   const [customPaymentModes, setCustomPaymentModes] = useState([]);
-  
+
   const FS_KEY = `cashbook_field_settings_${bookId}`;
   const [fieldSettings] = useState(() => {
     try {
@@ -2563,6 +2622,7 @@ export default function TransactionView() {
         payment_mode: txn.paymentMode || null,
         attachments: txn.attachments || null,
         customFields: txn.customFields || null,
+        created_at: txn.created_at || null,
       });
       setTransactions((prev) => [{ ...transaction, amount: parseFloat(transaction.amount) }, ...prev]);
     } catch (err) {
@@ -2594,6 +2654,7 @@ export default function TransactionView() {
         payment_mode: txn.paymentMode || null,
         attachments: txn.attachments || null,
         customFields: txn.customFields || null,
+        created_at: txn.created_at || null,
       });
       setTransactions((prev) => prev.map((t) => t.id === txn.id
         ? { ...transaction, amount: parseFloat(transaction.amount), customFields: transaction.customFields || {} }
