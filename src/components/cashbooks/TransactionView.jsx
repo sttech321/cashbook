@@ -3018,12 +3018,16 @@ export default function TransactionView() {
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
-                          {t.category || <span style={{ color: 'var(--gray-300)' }}>—</span>}
-                        </td>
-                        <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--blue)', whiteSpace: 'nowrap', fontWeight: 500 }}>
-                          {t.payment_mode || t.paymentMode || <span style={{ color: 'var(--gray-300)', fontWeight: 400 }}>—</span>}
-                        </td>
+                        {fieldSettings?.showCategory !== false && (
+                          <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--gray-500)', whiteSpace: 'nowrap' }}>
+                            {t.category || <span style={{ color: 'var(--gray-300)' }}>—</span>}
+                          </td>
+                        )}
+                        {fieldSettings?.showPaymentMode !== false && (
+                          <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--blue)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                            {t.payment_mode || t.paymentMode || <span style={{ color: 'var(--gray-300)', fontWeight: 400 }}>—</span>}
+                          </td>
+                        )}
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                           {(() => {
                             const atts = parseAtts(t);
